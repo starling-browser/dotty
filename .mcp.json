@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "dotty": {
+      "type": "sse",
+      "url": "http://localhost:8257/sse"
+    }
+  }
+}

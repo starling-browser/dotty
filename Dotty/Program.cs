@@ -1,4 +1,6 @@
 ﻿using Avalonia;
+using Avalonia.Media.Fonts;
+using Dotty.Controls;
 using System;
 
 namespace Dotty;
@@ -7,7 +9,7 @@ class Program
 {
     public static void Main(string[] args)
     {
-        try 
+        try
         {
             BuildAvaloniaApp()
                 .StartWithClassicDesktopLifetime(args);
@@ -24,5 +26,12 @@ class Program
         => AppBuilder.Configure<App>()
             .UsePlatformDetect()
             .WithInterFont()
+            .WithDottyTerminalFonts()
+            .ConfigureFonts(fontManager =>
+            {
+                fontManager.AddFontCollection(new EmbeddedFontCollection(
+                    new Uri("fonts:Dotty", UriKind.Absolute),
+                    new Uri("avares://Dotty/Assets/Fonts", UriKind.Absolute)));
+            })
             .LogToTrace();
 }

@@ -1,4 +1,0 @@
-[submodule "ghostty_src"]
-	path = ghostty_src
-	url = https://github.com/codymullins/ghostty.git
-	branch = dynamic-libs-for-dotnet
