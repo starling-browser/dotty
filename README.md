@@ -13,7 +13,7 @@ other .NET host.
   embeds the terminal gets MCP support.
 - **Dotty** — a sample Avalonia app that embeds the terminal.
 
-## Inspirations
+## References & Inspirations
 
 Other projects that embed terminals in .NET. Use these as references.
 
