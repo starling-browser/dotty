@@ -1,7 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Nodes;
 
-namespace Dotty.Mcp;
+namespace Dotty.Terminal.Mcp;
 
 public static class McpConfigWriter
 {

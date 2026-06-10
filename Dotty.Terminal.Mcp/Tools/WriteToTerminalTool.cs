@@ -1,19 +1,18 @@
 using System.Text;
-using Dotty.AI.Tools;
 
-namespace Dotty.Tools;
+namespace Dotty.Terminal.Mcp.Tools;
 
-public class WriteToTerminalTool : IAppTool
+/// <summary>
+/// MCP tool that sends text input to the terminal, as if typed by the user.
+/// Bound to the embeddable terminal via <see cref="ITerminalTarget"/>.
+/// </summary>
+public sealed class WriteToTerminalTool : IAppTool
 {
-    private readonly Func<byte[], Task> _writeToPty;
+    private readonly ITerminalTarget _terminal;
 
-    /// <summary>
-    /// The callback should dispatch WriteToPty on the UI thread.
-    /// Example: bytes => Dispatcher.UIThread.InvokeAsync(() => terminal.WriteToPty(bytes))
-    /// </summary>
-    public WriteToTerminalTool(Func<byte[], Task> writeToPty)
+    public WriteToTerminalTool(ITerminalTarget terminal)
     {
-        _writeToPty = writeToPty;
+        _terminal = terminal;
     }
 
     public string Name => "write_to_terminal";
@@ -43,7 +42,7 @@ public class WriteToTerminalTool : IAppTool
                 return new ToolResult("{\"error\": \"Missing required parameter: text\"}", IsError: true);
 
             var bytes = Encoding.UTF8.GetBytes(text);
-            await _writeToPty(bytes);
+            await _terminal.WriteAsync(bytes, ct);
             return new ToolResult("{\"status\": \"sent\", \"bytes\": " + bytes.Length + "}");
         }
         catch (Exception ex)

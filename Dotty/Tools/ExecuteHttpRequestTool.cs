@@ -1,8 +1,7 @@
 using System.Diagnostics;
 using System.Text;
 using System.Text.Json;
-using Dotty.AI.Serialization;
-using Dotty.AI.Tools;
+using Dotty.Terminal.Mcp;
 
 namespace Dotty.Tools;
 
@@ -59,14 +58,14 @@ public class ExecuteHttpRequestTool : IAppTool
         ExecuteHttpRequestArgs? args;
         try
         {
-            args = JsonSerializer.Deserialize(argumentsJson, AiJsonContext.Default.ExecuteHttpRequestArgs);
+            args = JsonSerializer.Deserialize(argumentsJson, HttpToolJsonContext.Default.ExecuteHttpRequestArgs);
         }
         catch (Exception ex)
         {
             return new ToolResult(
                 JsonSerializer.Serialize(
                     new ToolErrorResponse { Error = $"Invalid arguments: {ex.Message}" },
-                    AiJsonContext.Default.ToolErrorResponse),
+                    HttpToolJsonContext.Default.ToolErrorResponse),
                 IsError: true);
         }
 
@@ -75,7 +74,7 @@ public class ExecuteHttpRequestTool : IAppTool
             return new ToolResult(
                 JsonSerializer.Serialize(
                     new ToolErrorResponse { Error = "URL is required" },
-                    AiJsonContext.Default.ToolErrorResponse),
+                    HttpToolJsonContext.Default.ToolErrorResponse),
                 IsError: true);
         }
 
@@ -125,14 +124,14 @@ public class ExecuteHttpRequestTool : IAppTool
             };
 
             return new ToolResult(
-                JsonSerializer.Serialize(result, AiJsonContext.Default.HttpToolResponse));
+                JsonSerializer.Serialize(result, HttpToolJsonContext.Default.HttpToolResponse));
         }
         catch (TaskCanceledException)
         {
             return new ToolResult(
                 JsonSerializer.Serialize(
                     new ToolErrorResponse { Error = "Request timed out (30s)" },
-                    AiJsonContext.Default.ToolErrorResponse),
+                    HttpToolJsonContext.Default.ToolErrorResponse),
                 IsError: true);
         }
         catch (Exception ex)
@@ -140,7 +139,7 @@ public class ExecuteHttpRequestTool : IAppTool
             return new ToolResult(
                 JsonSerializer.Serialize(
                     new ToolErrorResponse { Error = ex.Message },
-                    AiJsonContext.Default.ToolErrorResponse),
+                    HttpToolJsonContext.Default.ToolErrorResponse),
                 IsError: true);
         }
     }

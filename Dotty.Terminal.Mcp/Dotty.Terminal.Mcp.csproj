@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <IsAotCompatible>true</IsAotCompatible>
+    <Description>Embeddable Model Context Protocol (MCP) server for the Dotty.Terminal engine. Exposes terminal tools over an SSE / JSON-RPC endpoint to any MCP client, with no UI-framework dependency. Host any .NET app embeds the terminal and gets MCP for free.</Description>
+    <PackageId>Dotty.Terminal.Mcp</PackageId>
+    <Version>0.1.0</Version>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Dotty.Terminal\Dotty.Terminal.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Dotty.Terminal.Tests" />
+  </ItemGroup>
+</Project>

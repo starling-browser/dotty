@@ -13,6 +13,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Dotty.Tests", "Dotty.Tests\
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Dotty.Terminal.Avalonia", "Dotty.Terminal.Avalonia\Dotty.Terminal.Avalonia.csproj", "{BA57EA99-DD05-453A-AF50-43DB6794F8F7}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Dotty.Terminal.Mcp", "Dotty.Terminal.Mcp\Dotty.Terminal.Mcp.csproj", "{D65EBD71-34EB-47BB-AA8D-786C37F23A42}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -83,6 +85,18 @@ Global
 		{BA57EA99-DD05-453A-AF50-43DB6794F8F7}.Release|x64.Build.0 = Release|Any CPU
 		{BA57EA99-DD05-453A-AF50-43DB6794F8F7}.Release|x86.ActiveCfg = Release|Any CPU
 		{BA57EA99-DD05-453A-AF50-43DB6794F8F7}.Release|x86.Build.0 = Release|Any CPU
+		{D65EBD71-34EB-47BB-AA8D-786C37F23A42}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D65EBD71-34EB-47BB-AA8D-786C37F23A42}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D65EBD71-34EB-47BB-AA8D-786C37F23A42}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{D65EBD71-34EB-47BB-AA8D-786C37F23A42}.Debug|x64.Build.0 = Debug|Any CPU
+		{D65EBD71-34EB-47BB-AA8D-786C37F23A42}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{D65EBD71-34EB-47BB-AA8D-786C37F23A42}.Debug|x86.Build.0 = Debug|Any CPU
+		{D65EBD71-34EB-47BB-AA8D-786C37F23A42}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D65EBD71-34EB-47BB-AA8D-786C37F23A42}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D65EBD71-34EB-47BB-AA8D-786C37F23A42}.Release|x64.ActiveCfg = Release|Any CPU
+		{D65EBD71-34EB-47BB-AA8D-786C37F23A42}.Release|x64.Build.0 = Release|Any CPU
+		{D65EBD71-34EB-47BB-AA8D-786C37F23A42}.Release|x86.ActiveCfg = Release|Any CPU
+		{D65EBD71-34EB-47BB-AA8D-786C37F23A42}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

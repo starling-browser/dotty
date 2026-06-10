@@ -22,5 +22,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Dotty.Terminal\Dotty.Terminal.csproj" />
+    <ProjectReference Include="..\Dotty.Terminal.Mcp\Dotty.Terminal.Mcp.csproj" />
   </ItemGroup>
 </Project>

@@ -1,5 +1,5 @@
 using System.Text;
-using Dotty.AI.Tools;
+using Dotty.Terminal.Mcp;
 using Dotty.Controls;
 
 namespace Dotty.Tools;

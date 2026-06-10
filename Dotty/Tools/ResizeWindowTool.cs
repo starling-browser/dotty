@@ -1,5 +1,5 @@
 using System.Text.Json;
-using Dotty.AI.Tools;
+using Dotty.Terminal.Mcp;
 
 namespace Dotty.Tools;
 

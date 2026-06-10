@@ -1,6 +1,6 @@
 using System.Text.Json.Serialization;
 
-namespace Dotty.Mcp;
+namespace Dotty.Terminal.Mcp;
 
 // ── JSON-RPC ──
 

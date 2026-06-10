@@ -1,4 +1,4 @@
-namespace Dotty.AI.Tools;
+namespace Dotty.Terminal.Mcp;
 
 public record ToolResult(string ResultJson, bool IsError = false);
 

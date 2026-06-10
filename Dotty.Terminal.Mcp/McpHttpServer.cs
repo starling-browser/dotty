@@ -2,9 +2,8 @@ using System.Collections.Concurrent;
 using System.Net;
 using System.Text;
 using System.Text.Json;
-using Dotty.AI.Tools;
 
-namespace Dotty.Mcp;
+namespace Dotty.Terminal.Mcp;
 
 /// <summary>
 /// Embedded MCP server using HttpListener with SSE transport.

@@ -26,6 +26,5 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Dotty\Dotty.csproj" />
-    <ProjectReference Include="..\Dotty.AI\Dotty.AI.csproj" />
   </ItemGroup>
 </Project>

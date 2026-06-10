@@ -1,14 +1,17 @@
-using Dotty.AI.Tools;
+namespace Dotty.Terminal.Mcp.Tools;
 
-namespace Dotty.Tools;
-
-public class ReadTerminalScreenTool : IAppTool
+/// <summary>
+/// MCP tool that reads the visible text on the terminal screen. Bound to the
+/// embeddable terminal via <see cref="ITerminalTarget"/>, so it travels with the
+/// terminal regardless of host UI framework.
+/// </summary>
+public sealed class ReadTerminalScreenTool : IAppTool
 {
-    private readonly Func<string> _getVisibleText;
+    private readonly ITerminalTarget _terminal;
 
-    public ReadTerminalScreenTool(Func<string> getVisibleText)
+    public ReadTerminalScreenTool(ITerminalTarget terminal)
     {
-        _getVisibleText = getVisibleText;
+        _terminal = terminal;
     }
 
     public string Name => "read_terminal_screen";
@@ -27,7 +30,7 @@ public class ReadTerminalScreenTool : IAppTool
     {
         try
         {
-            var text = _getVisibleText();
+            var text = _terminal.GetVisibleText();
             var escaped = text
                 .Replace("\\", "\\\\")
                 .Replace("\"", "\\\"")

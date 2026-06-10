@@ -7,7 +7,7 @@ using Avalonia.Input;
 using Avalonia.Layout;
 using Avalonia.Media;
 using Avalonia.Threading;
-using Dotty.Mcp;
+using Dotty.Terminal.Mcp;
 using Dotty.Theme;
 
 namespace Dotty.Controls;

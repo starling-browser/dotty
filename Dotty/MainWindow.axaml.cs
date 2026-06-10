@@ -7,11 +7,10 @@ using Avalonia.Interactivity;
 using Avalonia.Media;
 using Avalonia.Styling;
 using Avalonia.Threading;
-using Dotty.AI.Tools;
 using Dotty.Commands;
 using Dotty.Controls;
-using Dotty.Mcp;
 using Dotty.Settings;
+using Dotty.Terminal.Mcp;
 using Dotty.Theme;
 using Dotty.Tools;
 
@@ -21,7 +20,7 @@ public partial class MainWindow : Window
 {
     private CommandRegistry? _registry;
     private ThemeManager? _themeManager;
-    private McpHttpServer? _mcpServer;
+    private TerminalMcpServer? _mcpServer;
     private bool _allTerminalsClosed;
 
     private TerminalControl? ActiveTerminal => TerminalTabManager.ActiveTerminal;
@@ -62,14 +61,11 @@ public partial class MainWindow : Window
         foreach (var cmd in BuiltInCommands.Create(TerminalTabManager, this, _themeManager))
             _registry.Register(cmd);
 
-        // Tool registry backing the embedded MCP server
-        var toolRegistry = new AppToolRegistry();
-        toolRegistry.Register(new ReadTerminalScreenTool(
-            () => ActiveTerminal?.GetVisibleText() ?? ""));
-        toolRegistry.Register(new WriteToTerminalTool(async bytes =>
-        {
-            await Dispatcher.UIThread.InvokeAsync(() => ActiveTerminal?.WriteToPty(bytes));
-        }));
+        // The embedded MCP server is provided by the terminal engine itself
+        // (Dotty.Terminal.Mcp). This sample host binds it to the active tab and
+        // registers a few host-specific tools on top of the built-in terminal tools.
+        _mcpServer = new TerminalMcpServer(new ActiveTabTarget(this), settings.McpPort);
+        var toolRegistry = _mcpServer.Tools;
         toolRegistry.Register(new ExecuteHttpRequestTool());
         toolRegistry.Register(new ExecuteCommandTool(_registry, async commandId =>
         {
@@ -132,10 +128,9 @@ public partial class MainWindow : Window
         // Start embedded MCP server
         if (settings.McpEnabled)
         {
-            _mcpServer = new McpHttpServer(toolRegistry, settings.McpPort);
-            _mcpServer.Log += msg => System.Diagnostics.Debug.WriteLine(msg);
+            _mcpServer.Server.Log += msg => System.Diagnostics.Debug.WriteLine(msg);
             _mcpServer.Start();
-            StatusBar.BindMcpServer(_mcpServer);
+            StatusBar.BindMcpServer(_mcpServer.Server);
         }
         else
         {
@@ -285,5 +280,20 @@ public partial class MainWindow : Window
     {
         _mcpServer?.Dispose();
         base.OnClosed(e);
+    }
+
+    /// <summary>
+    /// Binds the engine's MCP terminal tools to whichever tab is currently active,
+    /// marshalling writes onto the UI thread. This is the sample host's adapter;
+    /// any .NET host can provide its own <see cref="ITerminalTarget"/>.
+    /// </summary>
+    private sealed class ActiveTabTarget(MainWindow owner) : ITerminalTarget
+    {
+        public string GetVisibleText() => owner.ActiveTerminal?.GetVisibleText() ?? "";
+
+        public async ValueTask WriteAsync(byte[] data, CancellationToken cancellationToken = default)
+        {
+            await Dispatcher.UIThread.InvokeAsync(() => owner.ActiveTerminal?.WriteToPty(data));
+        }
     }
 }
