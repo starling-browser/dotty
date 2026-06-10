@@ -25,6 +25,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Dotty\Dotty.csproj" />
+    <ProjectReference Include="..\samples\Dotty\Dotty.csproj" />
   </ItemGroup>
 </Project>

@@ -3,8 +3,6 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Dotty", "Dotty\Dotty.csproj", "{D1862499-DD7A-4382-B777-D34A45478376}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Dotty.Terminal", "Dotty.Terminal\Dotty.Terminal.csproj", "{2F76327E-0148-4CBB-8B6E-D86D402B744E}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Dotty.Terminal.Tests", "Dotty.Terminal.Tests\Dotty.Terminal.Tests.csproj", "{5AA2FDC4-4C8F-4946-B2BB-035E0ACBDAEA}"
@@ -14,6 +12,10 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Dotty.Terminal.Avalonia", "Dotty.Terminal.Avalonia\Dotty.Terminal.Avalonia.csproj", "{BA57EA99-DD05-453A-AF50-43DB6794F8F7}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Dotty.Terminal.Mcp", "Dotty.Terminal.Mcp\Dotty.Terminal.Mcp.csproj", "{D65EBD71-34EB-47BB-AA8D-786C37F23A42}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "samples", "samples", "{5D20AA90-6969-D8BD-9DCD-8634F4692FDA}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Dotty", "samples\Dotty\Dotty.csproj", "{78622213-E10D-4DD5-A316-0EA7D462A29A}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -25,18 +27,6 @@ Global
 		Release|x86 = Release|x86
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{D1862499-DD7A-4382-B777-D34A45478376}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{D1862499-DD7A-4382-B777-D34A45478376}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{D1862499-DD7A-4382-B777-D34A45478376}.Debug|x64.ActiveCfg = Debug|Any CPU
-		{D1862499-DD7A-4382-B777-D34A45478376}.Debug|x64.Build.0 = Debug|Any CPU
-		{D1862499-DD7A-4382-B777-D34A45478376}.Debug|x86.ActiveCfg = Debug|Any CPU
-		{D1862499-DD7A-4382-B777-D34A45478376}.Debug|x86.Build.0 = Debug|Any CPU
-		{D1862499-DD7A-4382-B777-D34A45478376}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{D1862499-DD7A-4382-B777-D34A45478376}.Release|Any CPU.Build.0 = Release|Any CPU
-		{D1862499-DD7A-4382-B777-D34A45478376}.Release|x64.ActiveCfg = Release|Any CPU
-		{D1862499-DD7A-4382-B777-D34A45478376}.Release|x64.Build.0 = Release|Any CPU
-		{D1862499-DD7A-4382-B777-D34A45478376}.Release|x86.ActiveCfg = Release|Any CPU
-		{D1862499-DD7A-4382-B777-D34A45478376}.Release|x86.Build.0 = Release|Any CPU
 		{2F76327E-0148-4CBB-8B6E-D86D402B744E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{2F76327E-0148-4CBB-8B6E-D86D402B744E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{2F76327E-0148-4CBB-8B6E-D86D402B744E}.Debug|x64.ActiveCfg = Debug|Any CPU
@@ -97,8 +87,23 @@ Global
 		{D65EBD71-34EB-47BB-AA8D-786C37F23A42}.Release|x64.Build.0 = Release|Any CPU
 		{D65EBD71-34EB-47BB-AA8D-786C37F23A42}.Release|x86.ActiveCfg = Release|Any CPU
 		{D65EBD71-34EB-47BB-AA8D-786C37F23A42}.Release|x86.Build.0 = Release|Any CPU
+		{78622213-E10D-4DD5-A316-0EA7D462A29A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{78622213-E10D-4DD5-A316-0EA7D462A29A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{78622213-E10D-4DD5-A316-0EA7D462A29A}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{78622213-E10D-4DD5-A316-0EA7D462A29A}.Debug|x64.Build.0 = Debug|Any CPU
+		{78622213-E10D-4DD5-A316-0EA7D462A29A}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{78622213-E10D-4DD5-A316-0EA7D462A29A}.Debug|x86.Build.0 = Debug|Any CPU
+		{78622213-E10D-4DD5-A316-0EA7D462A29A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{78622213-E10D-4DD5-A316-0EA7D462A29A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{78622213-E10D-4DD5-A316-0EA7D462A29A}.Release|x64.ActiveCfg = Release|Any CPU
+		{78622213-E10D-4DD5-A316-0EA7D462A29A}.Release|x64.Build.0 = Release|Any CPU
+		{78622213-E10D-4DD5-A316-0EA7D462A29A}.Release|x86.ActiveCfg = Release|Any CPU
+		{78622213-E10D-4DD5-A316-0EA7D462A29A}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{78622213-E10D-4DD5-A316-0EA7D462A29A} = {5D20AA90-6969-D8BD-9DCD-8634F4692FDA}
 	EndGlobalSection
 EndGlobal

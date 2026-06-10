@@ -15,9 +15,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Dotty.Terminal\Dotty.Terminal.csproj" />
-    <ProjectReference Include="..\Dotty.Terminal.Avalonia\Dotty.Terminal.Avalonia.csproj" />
-    <ProjectReference Include="..\Dotty.Terminal.Mcp\Dotty.Terminal.Mcp.csproj" />
+    <ProjectReference Include="..\..\Dotty.Terminal\Dotty.Terminal.csproj" />
+    <ProjectReference Include="..\..\Dotty.Terminal.Avalonia\Dotty.Terminal.Avalonia.csproj" />
+    <ProjectReference Include="..\..\Dotty.Terminal.Mcp\Dotty.Terminal.Mcp.csproj" />
   </ItemGroup>
 
   <ItemGroup>

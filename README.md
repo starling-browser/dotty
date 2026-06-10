@@ -1,8 +1,7 @@
 # Dotty
 
 Dotty is a terminal emulator for .NET. The core is an embeddable, framework-agnostic
-engine, so you can drop a Dotty terminal into an Avalonia app, an Uno app, or any
-other .NET host.
+engine, so you can drop a Dotty terminal into any .NET host.
 
 ## Projects
 
@@ -11,11 +10,14 @@ other .NET host.
 - **Dotty.Terminal.Mcp** — a Model Context Protocol (MCP) server that exposes
   terminal tools to MCP clients. It depends only on the engine, so any host that
   embeds the terminal gets MCP support.
-- **Dotty** — a sample Avalonia app that embeds the terminal.
+
+## Samples
+
+- **samples/Dotty** — a sample Avalonia app that embeds the terminal.
 
 ## References & Inspirations
 
-Other projects that embed terminals in .NET. Use these as references.
+Projects that we reviewed as inspiration or references.
 
 - [XtermSharp](https://github.com/migueldeicaza/XtermSharp) — a VT100/xterm terminal
-  engine for .NET, with front ends for several UI frameworks.
+  engine for .NET.
