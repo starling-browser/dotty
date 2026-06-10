@@ -25,6 +25,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\samples\Dotty\Dotty.csproj" />
+    <ProjectReference Include="..\samples\Dotty.Avalonia\Dotty.Avalonia.csproj" />
   </ItemGroup>
 </Project>

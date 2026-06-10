@@ -4,7 +4,7 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <IsAotCompatible>true</IsAotCompatible>
-    <Description>Avalonia terminal control for the Dotty terminal engine: PTY-backed TerminalControl with VT rendering, keyboard/mouse encoding, and theming.</Description>
+    <Description>Avalonia terminal control and renderer for the Dotty terminal engine. Provides thin Avalonia bindings over the shared session, input, and render model.</Description>
     <PackageId>Dotty.Terminal.Avalonia</PackageId>
     <Version>0.1.0</Version>
   </PropertyGroup>

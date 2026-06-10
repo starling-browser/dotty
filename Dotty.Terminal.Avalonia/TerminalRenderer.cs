@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using Avalonia;
 using Avalonia.Media;
 using Dotty.Theme;
-using Terminal = Dotty.Terminal.Terminal;
+using Dotty.Terminal.Rendering;
 using GridPosition = Dotty.Terminal.GridPosition;
 using CellAttributes = Dotty.Terminal.CellAttributes;
 using CursorShape = Dotty.Terminal.CursorShape;
@@ -28,7 +28,7 @@ public static class TerminalRenderer
 
     public static void Draw(
         DrawingContext context,
-        Dotty.Terminal.Terminal terminal,
+        TerminalScreenSnapshot snapshot,
         TerminalTheme theme,
         CellMetrics metrics,
         Size bounds,
@@ -43,10 +43,9 @@ public static class TerminalRenderer
         var bgColor = theme.ToAvaloniaColor(palette.Background);
         context.FillRectangle(GetBrush(bgColor), new Rect(0, 0, bounds.Width, bounds.Height));
 
-        var cursor = terminal.Cursor;
-        ushort cols = terminal.GridSize.Cols;
-        ushort rows = terminal.GridSize.Rows;
-        var selection = terminal.Selection;
+        var cursor = snapshot.Cursor;
+        ushort cols = snapshot.Size.Cols;
+        ushort rows = snapshot.Size.Rows;
 
         // Pre-compute colors
         var cursorColor = theme.ToAvaloniaColor(palette.Cursor);
@@ -69,24 +68,15 @@ public static class TerminalRenderer
         double padX = metrics.PadX;
         double padY = metrics.PadY;
 
-        bool isScrolledBack = terminal.IsScrolledBack;
-
-        // Exit status overlay message
-        string? exitMessage = null;
-        if (terminal.IsFinished)
-        {
-            var code = terminal.ExitStatus ?? 0;
-            exitMessage = $"[Process exited with code {code}. Press Ctrl+C to close]";
-        }
+        bool isScrolledBack = snapshot.IsScrolledBack;
 
         for (ushort row = 0; row < rows; row++)
         {
-            var cells = terminal.ViewportRowCells(row);
             double cellY = padY + row * cellH;
 
             for (ushort col = 0; col < cols; col++)
             {
-                ref readonly var cell = ref cells[col];
+                var cell = snapshot.CellAt(col, row);
                 double cellX = padX + col * cellW;
 
                 bool isCursor = !isScrolledBack
@@ -95,21 +85,21 @@ public static class TerminalRenderer
                     && cursor.Position.Row == row
                     && (cursorBlinkVisible || !cursor.Blinking);
 
-                bool isSelected = selection?.Contains(new GridPosition(col, row)) ?? false;
+                bool isSelected = cell.IsSelected;
 
-                bool inverse = cell.Attrs.HasFlag(CellAttributes.Inverse);
+                bool inverse = cell.Attributes.HasFlag(CellAttributes.Inverse);
 
                 // Resolve background color
                 var bg = inverse
-                    ? cell.Fg.ToRgb(palette)
-                    : cell.Bg.ToBgRgb(palette);
+                    ? cell.Foreground.ToRgb(palette)
+                    : cell.Background.ToBgRgb(palette);
 
                 // Bold text brightness: ANSI 0-7 -> 8-15
                 var fg = inverse
-                    ? cell.Bg.ToBgRgb(palette)
-                    : cell.Attrs.HasFlag(CellAttributes.Bold) && cell.Fg.Kind == ColorKind.Ansi && cell.Fg.R < 8
-                        ? palette.Colors[cell.Fg.R + 8]
-                        : cell.Fg.ToRgb(palette);
+                    ? cell.Background.ToBgRgb(palette)
+                    : cell.Attributes.HasFlag(CellAttributes.Bold) && cell.Foreground.Kind == ColorKind.Ansi && cell.Foreground.R < 8
+                        ? palette.Colors[cell.Foreground.R + 8]
+                        : cell.Foreground.ToRgb(palette);
 
                 // Draw cell background
                 if (bg != palette.Background)
@@ -157,7 +147,7 @@ public static class TerminalRenderer
                 }
 
                 // Hidden text: skip rendering entirely
-                bool hidden = cell.Attrs.HasFlag(CellAttributes.Hidden);
+                bool hidden = cell.Attributes.HasFlag(CellAttributes.Hidden);
 
                 // Draw text
                 if (cell.Codepoint != ' ' && !hidden)
@@ -167,11 +157,11 @@ public static class TerminalRenderer
                         : Color.FromRgb(fg.R, fg.G, fg.B);
 
                     // Dim: reduce alpha to ~50%
-                    if (cell.Attrs.HasFlag(CellAttributes.Dim))
+                    if (cell.Attributes.HasFlag(CellAttributes.Dim))
                         textColor = Color.FromArgb(0x80, textColor.R, textColor.G, textColor.B);
 
-                    bool isBold = cell.Attrs.HasFlag(CellAttributes.Bold);
-                    bool isItalic = cell.Attrs.HasFlag(CellAttributes.Italic);
+                    bool isBold = cell.Attributes.HasFlag(CellAttributes.Bold);
+                    bool isItalic = cell.Attributes.HasFlag(CellAttributes.Italic);
                     var tf = (isBold, isItalic) switch
                     {
                         (true, true) => boldItalicTypeface,
@@ -192,12 +182,12 @@ public static class TerminalRenderer
                 }
 
                 // Underline
-                if (cell.Attrs.HasFlag(CellAttributes.Underline) && !hidden)
+                if (cell.Attributes.HasFlag(CellAttributes.Underline) && !hidden)
                 {
                     var ulColor = isCursor && cursor.Shape == CursorShape.Block
                         ? baseColor
                         : Color.FromRgb(fg.R, fg.G, fg.B);
-                    if (cell.Attrs.HasFlag(CellAttributes.Dim))
+                    if (cell.Attributes.HasFlag(CellAttributes.Dim))
                         ulColor = Color.FromArgb(0x80, ulColor.R, ulColor.G, ulColor.B);
                     double ulY = cellY + cellH - 1.5;
                     var pen = new Pen(GetBrush(ulColor), 1);
@@ -205,12 +195,12 @@ public static class TerminalRenderer
                 }
 
                 // Strikethrough
-                if (cell.Attrs.HasFlag(CellAttributes.Strikethrough) && !hidden)
+                if (cell.Attributes.HasFlag(CellAttributes.Strikethrough) && !hidden)
                 {
                     var stColor = isCursor && cursor.Shape == CursorShape.Block
                         ? baseColor
                         : Color.FromRgb(fg.R, fg.G, fg.B);
-                    if (cell.Attrs.HasFlag(CellAttributes.Dim))
+                    if (cell.Attributes.HasFlag(CellAttributes.Dim))
                         stColor = Color.FromArgb(0x80, stColor.R, stColor.G, stColor.B);
                     double stY = cellY + cellH * 0.5;
                     var pen = new Pen(GetBrush(stColor), 1);
@@ -227,12 +217,12 @@ public static class TerminalRenderer
         }
 
         // Draw exit status message at bottom
-        if (exitMessage != null)
+        if (snapshot.ExitMessage != null)
         {
             var exitTypeface = new Typeface(FontFamily.Parse("fonts:DottyTerminal#Overpass Mono, Cascadia Mono, Menlo, monospace"), FontStyle.Normal, FontWeight.Light);
             var exitColor = Color.FromArgb(0xCC, 0xAA, 0xAA, 0xAA);
             var exitText = new FormattedText(
-                exitMessage,
+                snapshot.ExitMessage,
                 System.Globalization.CultureInfo.InvariantCulture,
                 FlowDirection.LeftToRight,
                 exitTypeface,

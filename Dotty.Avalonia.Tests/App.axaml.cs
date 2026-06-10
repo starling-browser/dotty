@@ -1,7 +1,7 @@
 using Avalonia;
 using Avalonia.Markup.Xaml;
 
-namespace Dotty.Tests;
+namespace Dotty.Avalonia.Tests;
 
 public class App : Application
 {

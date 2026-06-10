@@ -3,7 +3,7 @@ using Dotty.Input;
 using Xunit;
 using TerminalModes = Dotty.Terminal.TerminalModes;
 
-namespace Dotty.Tests;
+namespace Dotty.Avalonia.Tests;
 
 public class KeyEncoderTests
 {

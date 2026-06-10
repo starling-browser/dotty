@@ -5,7 +5,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <IsAotCompatible>true</IsAotCompatible>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <Description>UI-agnostic terminal emulator engine: VT/ANSI parser, grid and scrollback state model, and Unix PTY handling. Pure .NET, no framework dependencies.</Description>
+    <Description>UI-agnostic terminal emulator engine and embedding API: parser, grid, scrollback, pseudo-terminal session, input encoding, and render model. Pure .NET, no framework dependencies.</Description>
     <PackageId>Dotty.Terminal</PackageId>
     <Version>0.1.0</Version>
   </PropertyGroup>

@@ -1,6 +1,6 @@
 using Xunit;
 
-namespace Dotty.Tests;
+namespace Dotty.Avalonia.Tests;
 
 public class SelectionTests
 {

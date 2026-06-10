@@ -1,7 +1,7 @@
 using Dotty.Rendering;
 using Xunit;
 
-namespace Dotty.Tests;
+namespace Dotty.Avalonia.Tests;
 
 public class CellMetricsTests
 {

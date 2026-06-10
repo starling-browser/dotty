@@ -6,7 +6,7 @@ using Dotty.Commands;
 using Dotty.Controls;
 using Xunit;
 
-namespace Dotty.Tests;
+namespace Dotty.Avalonia.Tests;
 
 public class CommandPaletteTests
 {

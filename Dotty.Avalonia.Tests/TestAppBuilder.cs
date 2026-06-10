@@ -1,11 +1,11 @@
 using Avalonia;
 using Avalonia.Headless;
 using Avalonia.Harfbuzz;
-using Dotty.Tests;
+using Dotty.Avalonia.Tests;
 
 [assembly: AvaloniaTestApplication(typeof(TestAppBuilder))]
 
-namespace Dotty.Tests;
+namespace Dotty.Avalonia.Tests;
 
 public class TestAppBuilder
 {

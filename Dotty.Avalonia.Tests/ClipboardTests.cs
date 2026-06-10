@@ -3,7 +3,7 @@ using Avalonia.Headless.XUnit;
 using Avalonia.Input.Platform;
 using Xunit;
 
-namespace Dotty.Tests;
+namespace Dotty.Avalonia.Tests;
 
 public class ClipboardTests
 {

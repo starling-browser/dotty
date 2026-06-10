@@ -1,163 +1,76 @@
 using Avalonia.Input;
+using Dotty.Terminal.Input;
 using TerminalModes = Dotty.Terminal.TerminalModes;
 
 namespace Dotty.Input;
 
-/// <summary>
-/// Maps Avalonia Key + modifiers to VT escape sequences.
-/// Ported from reference input.rs.
-/// </summary>
 public static class KeyEncoder
 {
-    public static byte[]? Encode(Key key, KeyModifiers modifiers, string? text, TerminalModes modes)
+    public static byte[]? Encode(Key key, KeyModifiers modifiers, string? text, TerminalModes modes) =>
+        TerminalInputEncoder.Encode(MapKey(key), MapModifiers(modifiers), text, modes);
+
+    public static TerminalKey MapKey(Key key) => key switch
     {
-        bool appCursor = modes.HasFlag(TerminalModes.CursorKeys);
-        bool ctrl = modifiers.HasFlag(KeyModifiers.Control);
-        bool alt = modifiers.HasFlag(KeyModifiers.Alt);
-        bool shift = modifiers.HasFlag(KeyModifiers.Shift);
+        >= Key.A and <= Key.Z => (TerminalKey)((int)TerminalKey.A + (int)(key - Key.A)),
+        >= Key.D0 and <= Key.D9 => (TerminalKey)((int)TerminalKey.D0 + (int)(key - Key.D0)),
+        >= Key.NumPad0 and <= Key.NumPad9 => (TerminalKey)((int)TerminalKey.NumPad0 + (int)(key - Key.NumPad0)),
+        Key.Enter => TerminalKey.Enter,
+        Key.Back => TerminalKey.Backspace,
+        Key.Tab => TerminalKey.Tab,
+        Key.Escape => TerminalKey.Escape,
+        Key.Up => TerminalKey.Up,
+        Key.Down => TerminalKey.Down,
+        Key.Right => TerminalKey.Right,
+        Key.Left => TerminalKey.Left,
+        Key.Home => TerminalKey.Home,
+        Key.End => TerminalKey.End,
+        Key.PageUp => TerminalKey.PageUp,
+        Key.PageDown => TerminalKey.PageDown,
+        Key.Insert => TerminalKey.Insert,
+        Key.Delete => TerminalKey.Delete,
+        Key.F1 => TerminalKey.F1,
+        Key.F2 => TerminalKey.F2,
+        Key.F3 => TerminalKey.F3,
+        Key.F4 => TerminalKey.F4,
+        Key.F5 => TerminalKey.F5,
+        Key.F6 => TerminalKey.F6,
+        Key.F7 => TerminalKey.F7,
+        Key.F8 => TerminalKey.F8,
+        Key.F9 => TerminalKey.F9,
+        Key.F10 => TerminalKey.F10,
+        Key.F11 => TerminalKey.F11,
+        Key.F12 => TerminalKey.F12,
+        Key.Space => TerminalKey.Space,
+        Key.OemMinus => TerminalKey.OemMinus,
+        Key.OemPlus => TerminalKey.OemPlus,
+        Key.OemOpenBrackets => TerminalKey.OemOpenBrackets,
+        Key.OemCloseBrackets => TerminalKey.OemCloseBrackets,
+        Key.OemPipe => TerminalKey.OemPipe,
+        Key.OemSemicolon => TerminalKey.OemSemicolon,
+        Key.OemQuotes => TerminalKey.OemQuotes,
+        Key.OemComma => TerminalKey.OemComma,
+        Key.OemPeriod => TerminalKey.OemPeriod,
+        Key.OemQuestion => TerminalKey.OemQuestion,
+        Key.OemTilde => TerminalKey.OemTilde,
+        Key.Multiply => TerminalKey.Multiply,
+        Key.Add => TerminalKey.Add,
+        Key.Subtract => TerminalKey.Subtract,
+        Key.Decimal => TerminalKey.Decimal,
+        Key.Divide => TerminalKey.Divide,
+        _ => TerminalKey.None,
+    };
 
-        // Ctrl+letter -> control code
-        if (ctrl)
-        {
-            if (key >= Key.A && key <= Key.Z)
-            {
-                byte code = (byte)(key - Key.A + 1);
-                return [code];
-            }
-            if (key == Key.Space)
-                return [0];
-        }
-
-        // Named keys
-        switch (key)
-        {
-            case Key.Enter:
-                return "\r"u8.ToArray();
-            case Key.Back:
-                return [0x7f];
-            case Key.Tab:
-                return shift ? "\x1b[Z"u8.ToArray() : "\t"u8.ToArray();
-            case Key.Escape:
-                return [0x1b];
-            case Key.Up:
-                return appCursor ? "\x1bOA"u8.ToArray() : "\x1b[A"u8.ToArray();
-            case Key.Down:
-                return appCursor ? "\x1bOB"u8.ToArray() : "\x1b[B"u8.ToArray();
-            case Key.Right:
-                return appCursor ? "\x1bOC"u8.ToArray() : "\x1b[C"u8.ToArray();
-            case Key.Left:
-                return appCursor ? "\x1bOD"u8.ToArray() : "\x1b[D"u8.ToArray();
-            case Key.Home:
-                return "\x1b[H"u8.ToArray();
-            case Key.End:
-                return "\x1b[F"u8.ToArray();
-            case Key.PageUp:
-                return "\x1b[5~"u8.ToArray();
-            case Key.PageDown:
-                return "\x1b[6~"u8.ToArray();
-            case Key.Insert:
-                return "\x1b[2~"u8.ToArray();
-            case Key.Delete:
-                return "\x1b[3~"u8.ToArray();
-            case Key.F1:
-                return "\x1bOP"u8.ToArray();
-            case Key.F2:
-                return "\x1bOQ"u8.ToArray();
-            case Key.F3:
-                return "\x1bOR"u8.ToArray();
-            case Key.F4:
-                return "\x1bOS"u8.ToArray();
-            case Key.F5:
-                return "\x1b[15~"u8.ToArray();
-            case Key.F6:
-                return "\x1b[17~"u8.ToArray();
-            case Key.F7:
-                return "\x1b[18~"u8.ToArray();
-            case Key.F8:
-                return "\x1b[19~"u8.ToArray();
-            case Key.F9:
-                return "\x1b[20~"u8.ToArray();
-            case Key.F10:
-                return "\x1b[21~"u8.ToArray();
-            case Key.F11:
-                return "\x1b[23~"u8.ToArray();
-            case Key.F12:
-                return "\x1b[24~"u8.ToArray();
-        }
-
-        // Alt+key: ESC prefix
-        if (alt && text is { Length: > 0 })
-        {
-            var bytes = new byte[1 + System.Text.Encoding.UTF8.GetByteCount(text)];
-            bytes[0] = 0x1b;
-            System.Text.Encoding.UTF8.GetBytes(text, bytes.AsSpan(1));
-            return bytes;
-        }
-
-        // Printable characters (from KeySymbol or OnTextInput)
-        if (text is { Length: > 0 })
-            return System.Text.Encoding.UTF8.GetBytes(text);
-
-        // Fallback: map Key enum to ASCII character directly.
-        // Covers cases where neither KeySymbol nor OnTextInput provides text.
-        if (!ctrl && !alt)
-        {
-            char? c = KeyToChar(key, shift);
-            if (c.HasValue)
-                return System.Text.Encoding.UTF8.GetBytes(c.Value.ToString());
-        }
-
-        return null;
-    }
-
-    private static char? KeyToChar(Key key, bool shift)
+    public static TerminalKeyModifiers MapModifiers(KeyModifiers modifiers)
     {
-        if (key >= Key.A && key <= Key.Z)
-            return shift ? (char)('A' + key - Key.A) : (char)('a' + key - Key.A);
-
-        if (key >= Key.D0 && key <= Key.D9)
-        {
-            if (!shift)
-                return (char)('0' + key - Key.D0);
-            return (key - Key.D0) switch
-            {
-                0 => ')',
-                1 => '!',
-                2 => '@',
-                3 => '#',
-                4 => '$',
-                5 => '%',
-                6 => '^',
-                7 => '&',
-                8 => '*',
-                9 => '(',
-                _ => null,
-            };
-        }
-
-        if (key >= Key.NumPad0 && key <= Key.NumPad9)
-            return (char)('0' + key - Key.NumPad0);
-
-        return key switch
-        {
-            Key.Space => ' ',
-            Key.OemMinus => shift ? '_' : '-',
-            Key.OemPlus => shift ? '+' : '=',
-            Key.OemOpenBrackets => shift ? '{' : '[',
-            Key.OemCloseBrackets => shift ? '}' : ']',
-            Key.OemPipe => shift ? '|' : '\\',
-            Key.OemSemicolon => shift ? ':' : ';',
-            Key.OemQuotes => shift ? '"' : '\'',
-            Key.OemComma => shift ? '<' : ',',
-            Key.OemPeriod => shift ? '>' : '.',
-            Key.OemQuestion => shift ? '?' : '/',
-            Key.OemTilde => shift ? '~' : '`',
-            Key.Multiply => '*',
-            Key.Add => '+',
-            Key.Subtract => '-',
-            Key.Decimal => '.',
-            Key.Divide => '/',
-            _ => null,
-        };
+        var mapped = TerminalKeyModifiers.None;
+        if (modifiers.HasFlag(KeyModifiers.Shift))
+            mapped |= TerminalKeyModifiers.Shift;
+        if (modifiers.HasFlag(KeyModifiers.Control))
+            mapped |= TerminalKeyModifiers.Control;
+        if (modifiers.HasFlag(KeyModifiers.Alt))
+            mapped |= TerminalKeyModifiers.Alt;
+        if (modifiers.HasFlag(KeyModifiers.Meta))
+            mapped |= TerminalKeyModifiers.Meta;
+        return mapped;
     }
 }

@@ -42,6 +42,14 @@ public sealed class TerminalMcpServer : IDisposable
     {
     }
 
+    /// <summary>
+    /// Creates a terminal-backed MCP server bound to a shared terminal session.
+    /// </summary>
+    public TerminalMcpServer(Dotty.Terminal.Hosting.TerminalSession session, int port = 8257)
+        : this(new SessionTerminalTarget(session), port)
+    {
+    }
+
     public void Start() => Server.Start();
 
     public void Stop() => Server.Stop();
