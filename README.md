@@ -14,6 +14,7 @@ engine, so you can drop a Dotty terminal into any .NET host.
 ## Samples
 
 - **samples/Dotty.Avalonia** — a sample Avalonia app that embeds the terminal.
+- **samples/Dotty.Uno** — a small Uno app that hosts the framework-neutral terminal session.
 
 ## Embedding
 

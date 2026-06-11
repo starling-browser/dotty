@@ -1,0 +1,40 @@
+<Project Sdk="Uno.Sdk/6.4.42">
+  <PropertyGroup>
+    <TargetFrameworks>net10.0-desktop</TargetFrameworks>
+
+    <OutputType>Exe</OutputType>
+    <UnoSingleProject>true</UnoSingleProject>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+
+    <!-- Display name -->
+    <ApplicationTitle>Dotty.Uno</ApplicationTitle>
+    <!-- App Identifier -->
+    <ApplicationId>com.companyname.dotty-uno</ApplicationId>
+    <!-- Versions -->
+    <ApplicationDisplayVersion>1.0</ApplicationDisplayVersion>
+    <ApplicationVersion>1</ApplicationVersion>
+    <!-- Package Publisher -->
+    <ApplicationPublisher>Dotty.Uno</ApplicationPublisher>
+    <!-- Package Description -->
+    <Description>Dotty.Uno powered by Uno Platform.</Description>
+
+    <!--
+      UnoFeatures are used to quickly add and manage features enabled for your app.
+      https://aka.platform.uno/singleproject-features
+    -->
+    <UnoFeatures>
+      CSharpMarkup;
+      SkiaRenderer;
+    </UnoFeatures>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\Dotty.Terminal\Dotty.Terminal.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Tmds.DBus.Protocol" />
+  </ItemGroup>
+
+</Project>
