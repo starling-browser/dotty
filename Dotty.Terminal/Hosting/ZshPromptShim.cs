@@ -86,7 +86,7 @@ internal static class ZshPromptShim
 
     internal static void Cleanup(string? shimDirectory)
     {
-        if (shimDirectory == null)
+        if (shimDirectory == null || !Directory.Exists(shimDirectory))
             return;
 
         try
@@ -95,5 +95,5 @@ internal static class ZshPromptShim
         }
         catch (IOException) { }
         catch (UnauthorizedAccessException) { }
-    }
+        catch (DirectoryNotFoundException) { }
 }
