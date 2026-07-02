@@ -48,6 +48,27 @@ A host binding is responsible for five small jobs:
 
 `Dotty.Terminal.Avalonia` is one example of that binding.
 
+### Prompt hints
+
+An embedded terminal often has little width, so the default `user@host dir %`
+shell prompt wastes space. The host can ask for a shorter prompt with
+`PromptHint`:
+
+```csharp
+var session = new TerminalSession(new TerminalSessionOptions
+{
+    Size = new GridSize(80, 24),
+    PromptHint = PromptHint.DirectoryArrow, // "net10.0-desktop ❯"
+});
+```
+
+Styles: `Directory` (`net10.0-desktop %`), `DirectoryArrow` (`net10.0-desktop ❯`,
+arrow turns red when the last command failed), and `ParentAndDirectory`
+(`akt/net10.0-desktop %`). The hint is applied after the user's own shell
+config loads, so aliases and PATH are untouched. It works by pointing `ZDOTDIR`
+at a generated shim that sources the user's real rc files and then sets
+`PROMPT`. Only zsh honors the hint today. Other shells keep their own prompt.
+
 ## References & Inspirations
 
 Projects that we reviewed as inspiration or references.

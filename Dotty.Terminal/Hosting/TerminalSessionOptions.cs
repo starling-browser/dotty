@@ -9,6 +9,13 @@ public sealed class TerminalSessionOptions
     public string? WorkingDirectory { get; init; }
     public IReadOnlyDictionary<string, string> Environment { get; init; } = new Dictionary<string, string>();
 
+    /// <summary>
+    /// How the embedding application would like the shell prompt to look.
+    /// See <see cref="PromptHint"/> for the available styles and
+    /// which shells honor the hint.
+    /// </summary>
+    public PromptHint PromptHint { get; init; } = PromptHint.None;
+
     internal PtyConfig ToPtyConfig()
     {
         var config = new PtyConfig
