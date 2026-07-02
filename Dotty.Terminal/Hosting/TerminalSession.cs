@@ -15,10 +15,27 @@ public sealed class TerminalSession : IDisposable
     private bool _exitRaised;
     private string _lastTitle;
     private string? _lastWorkingDirectory;
+    private string? _promptShimDirectory;
 
     public TerminalSession(TerminalSessionOptions options)
-        : this(TerminalDriver.Create(options.ToPtyConfig()))
+        : this(CreateDriver(options, out string? promptShimDirectory))
     {
+        _promptShimDirectory = promptShimDirectory;
+    }
+
+    private static TerminalDriver CreateDriver(TerminalSessionOptions options, out string? promptShimDirectory)
+    {
+        var config = options.ToPtyConfig();
+        promptShimDirectory = ZshPromptShim.Apply(options.PromptHint, config);
+        try
+        {
+            return TerminalDriver.Create(config);
+        }
+        catch
+        {
+            ZshPromptShim.Cleanup(promptShimDirectory);
+            throw;
+        }
     }
 
     private TerminalSession(TerminalDriver driver)
@@ -262,6 +279,8 @@ public sealed class TerminalSession : IDisposable
     {
         if (_disposed) return;
         Stop();
+        ZshPromptShim.Cleanup(_promptShimDirectory);
+        _promptShimDirectory = null;
         _disposed = true;
     }
 }
