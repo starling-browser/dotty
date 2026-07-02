@@ -11,7 +11,7 @@ public sealed class TerminalSessionOptions
 
     /// <summary>
     /// How the embedding application would like the shell prompt to look.
-    /// See <see cref="Hosting.PromptHint"/> for the available styles and
+    /// See <see cref="PromptHint"/> for the available styles and
     /// which shells honor the hint.
     /// </summary>
     public PromptHint PromptHint { get; init; } = PromptHint.None;
