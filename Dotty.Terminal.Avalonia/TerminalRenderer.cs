@@ -98,7 +98,7 @@ public static class TerminalRenderer
                 var fg = inverse
                     ? cell.Background.ToBgRgb(palette)
                     : cell.Attributes.HasFlag(CellAttributes.Bold) && cell.Foreground.Kind == ColorKind.Ansi && cell.Foreground.R < 8
-                        ? palette.Colors[cell.Foreground.R + 8]
+                        ? palette.GetAnsiColor(cell.Foreground.R, bright: true)
                         : cell.Foreground.ToRgb(palette);
 
                 // Draw cell background

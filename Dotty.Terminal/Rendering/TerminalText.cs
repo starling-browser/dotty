@@ -16,7 +16,7 @@ public static class TerminalText
             for (int col = 0; col < cells.Length; col++)
                 line.Append(cells[col].Codepoint);
 
-            sb.AppendLine(line.ToString().TrimEnd());
+            sb.Append(line.ToString().TrimEnd()).Append('\n');
         }
 
         var result = sb.ToString().TrimEnd('\r', '\n');

@@ -14,6 +14,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <InternalsVisibleTo Include="Dotty.Avalonia.Tests" />
     <ProjectReference Include="..\Dotty.Terminal\Dotty.Terminal.csproj" />
   </ItemGroup>
 

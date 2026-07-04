@@ -36,6 +36,9 @@ public struct SelectionRange
             SelectionMode.Normal => ContainsNormal(pos, start, end),
             SelectionMode.Block => ContainsBlock(pos, start, end),
             SelectionMode.Line => pos.Row >= start.Row && pos.Row <= end.Row,
+            // Word selections carry exact bounds (set by SelectWord), so they
+            // contain cells exactly like a normal range.
+            SelectionMode.Word => ContainsNormal(pos, start, end),
             _ => false,
         };
     }

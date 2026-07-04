@@ -1,4 +1,6 @@
+using Dotty.Controls;
 using Dotty.Rendering;
+using GridSize = Dotty.Terminal.GridSize;
 using Xunit;
 
 namespace Dotty.Avalonia.Tests;
@@ -186,54 +188,59 @@ public class CellMetricsTests
         ushort rows = metrics.RowsForHeight(600.0);
 
         // Last cell's bottom-right corner should be within window bounds
-        double lastRight = metrics.PadX + cols * metrics.CellWidth;
-        double lastBottom = metrics.PadY + rows * metrics.CellHeight;
+        double lastRight = metrics.RenderedContentWidth(cols);
+        double lastBottom = metrics.RenderedContentHeight(rows);
 
         Assert.True(lastRight <= 800.0, $"Last column extends to {lastRight} which exceeds width 800");
         Assert.True(lastBottom <= 600.0, $"Last row extends to {lastBottom} which exceeds height 600");
     }
 
-    // ── Bug-confirming: resize/font-change mismatch tests ──
-    // During resize debounce, Render() computes new CellMetrics but uses the terminal's
-    // old grid dimensions. This causes rendered content to overflow window bounds.
-
     [Fact]
-    public void FontIncreaseRenderedContentOverflowsBounds()
+    public void RenderedContentWidthAndHeightIncludePaddingAndCells()
     {
-        // Compute grid dimensions at font 16, 800×600
-        var oldMetrics = new CellMetrics(16.0);
-        ushort cols = oldMetrics.ColumnsForWidth(800.0);
-        ushort rows = oldMetrics.RowsForHeight(600.0);
+        var metrics = new CellMetrics(10.0);
 
-        // Font changes to 20 — new metrics, but grid dimensions haven't updated yet
-        var newMetrics = new CellMetrics(20.0);
-
-        // Rendering old grid with new metrics: content must fit within 800×600
-        double renderedWidth = newMetrics.PadX + cols * newMetrics.CellWidth;
-        double renderedHeight = newMetrics.PadY + rows * newMetrics.CellHeight;
-
-        Assert.True(renderedWidth <= 800.0,
-            $"Rendered width {renderedWidth} exceeds window width 800 (old grid {cols}×{rows} with new font metrics)");
-        Assert.True(renderedHeight <= 600.0,
-            $"Rendered height {renderedHeight} exceeds window height 600 (old grid {cols}×{rows} with new font metrics)");
+        Assert.Equal(metrics.PadX + 12 * metrics.CellWidth, metrics.RenderedContentWidth(12));
+        Assert.Equal(metrics.PadY + 7 * metrics.CellHeight, metrics.RenderedContentHeight(7));
     }
 
     [Fact]
-    public void WindowShrinkRenderedContentOverflowsBounds()
+    public void FontIncreaseStaleGridDoesNotFitNewMetrics()
+    {
+        // Compute grid dimensions at font 16, 800×600
+        var oldMetrics = new CellMetrics(16.0);
+        var staleSize = new GridSize(
+            oldMetrics.ColumnsForWidth(800.0),
+            oldMetrics.RowsForHeight(600.0));
+
+        // Font changes to 20 — new metrics, but grid dimensions haven't updated yet
+        var newMetrics = new CellMetrics(20.0);
+        var resizedSize = new GridSize(
+            newMetrics.ColumnsForWidth(800.0),
+            newMetrics.RowsForHeight(600.0));
+
+        Assert.False(newMetrics.FitsWithin(staleSize, 800.0, 600.0),
+            $"Stale grid {staleSize.Cols}×{staleSize.Rows} should not render with larger font metrics");
+        Assert.True(newMetrics.FitsWithin(resizedSize, 800.0, 600.0));
+    }
+
+    [Fact]
+    public void WindowShrinkStaleGridDoesNotFitNewBounds()
     {
         // Compute grid dimensions at font 16, 800×600
         var metrics = new CellMetrics(16.0);
-        ushort cols = metrics.ColumnsForWidth(800.0);
-        ushort rows = metrics.RowsForHeight(600.0);
+        var staleSize = new GridSize(
+            metrics.ColumnsForWidth(800.0),
+            metrics.RowsForHeight(600.0));
 
         // Window shrinks to 600×400, but grid dimensions haven't updated yet
-        double renderedWidth = metrics.PadX + cols * metrics.CellWidth;
-        double renderedHeight = metrics.PadY + rows * metrics.CellHeight;
+        var resizedSize = new GridSize(
+            metrics.ColumnsForWidth(600.0),
+            metrics.RowsForHeight(400.0));
 
-        Assert.True(renderedWidth <= 600.0,
-            $"Rendered width {renderedWidth} exceeds new window width 600 (stale grid {cols}×{rows})");
-        Assert.True(renderedHeight <= 400.0,
-            $"Rendered height {renderedHeight} exceeds new window height 400 (stale grid {cols}×{rows})");
+        Assert.False(metrics.FitsWithin(staleSize, 600.0, 400.0),
+            $"Stale grid {staleSize.Cols}×{staleSize.Rows} should not render after window shrink");
+        Assert.True(metrics.FitsWithin(resizedSize, 600.0, 400.0));
     }
 
     [Fact]
@@ -247,8 +254,8 @@ public class CellMetricsTests
         // Font changes to 16 — smaller cells, but grid dimensions are stale
         var newMetrics = new CellMetrics(16.0);
 
-        double renderedWidth = newMetrics.PadX + cols * newMetrics.CellWidth;
-        double renderedHeight = newMetrics.PadY + rows * newMetrics.CellHeight;
+        double renderedWidth = newMetrics.RenderedContentWidth(cols);
+        double renderedHeight = newMetrics.RenderedContentHeight(rows);
 
         // Content fits (no overflow) but wastes significant space
         Assert.True(renderedWidth <= 800.0,
@@ -263,5 +270,38 @@ public class CellMetricsTests
             $"Only {unusedWidth / 800.0 * 100:F1}% unused width — mismatch wastes less space than expected");
         Assert.True(unusedHeight / 600.0 > 0.10,
             $"Only {unusedHeight / 600.0 * 100:F1}% unused height — mismatch wastes less space than expected");
+    }
+
+    [Fact]
+    public void PendingResizeSuppressesRender()
+    {
+        var now = new DateTime(2026, 6, 10, 0, 0, 0, DateTimeKind.Utc);
+
+        Assert.True(TerminalControl.ShouldSuppressRenderForResize(
+            resizePending: true,
+            suppressRenderUntil: DateTime.MinValue,
+            now));
+    }
+
+    [Fact]
+    public void ActivePostResizeSettleWindowSuppressesRender()
+    {
+        var now = new DateTime(2026, 6, 10, 0, 0, 0, DateTimeKind.Utc);
+
+        Assert.True(TerminalControl.ShouldSuppressRenderForResize(
+            resizePending: false,
+            suppressRenderUntil: now.AddMilliseconds(1),
+            now));
+    }
+
+    [Fact]
+    public void ExpiredPostResizeSettleWindowAllowsRender()
+    {
+        var now = new DateTime(2026, 6, 10, 0, 0, 0, DateTimeKind.Utc);
+
+        Assert.False(TerminalControl.ShouldSuppressRenderForResize(
+            resizePending: false,
+            suppressRenderUntil: now,
+            now));
     }
 }

@@ -28,6 +28,7 @@ public class TerminalControl : Control
     private DateTime _bellFlashUntil;
     private GridSize _lastSize;
     private GridSize _pendingSize;
+    private bool _resizePending;
     private bool _keyDownHandled;
     private Dotty.Terminal.GridPosition? _selectionEnd;
     private bool _mouseSelecting;
@@ -141,6 +142,7 @@ public class TerminalControl : Control
         _renderTimer = null;
         _resizeTimer?.Stop();
         _resizeTimer = null;
+        _resizePending = false;
         _blinkTimer?.Stop();
         _blinkTimer = null;
 
@@ -198,12 +200,15 @@ public class TerminalControl : Control
         {
             _pendingSize = newSize;
             _lastSize = newSize;
+            _resizePending = true;
             _resizeTimer?.Stop();
             _resizeTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(50) };
             _resizeTimer.Tick += (_, _) =>
             {
                 _resizeTimer!.Stop();
+                _resizeTimer = null;
                 _session?.Resize(_pendingSize);
+                _resizePending = false;
                 _suppressRenderUntil = DateTime.UtcNow.AddMilliseconds(150);
                 InvalidateVisual();
             };
@@ -213,7 +218,7 @@ public class TerminalControl : Control
         // During post-resize suppress window, show background only so partial child-process
         // redraws are never visible. Damage is left unacknowledged so the timer fires after
         // suppression and triggers a normal render with the fully-redrawn content.
-        if (_suppressRenderUntil != DateTime.MinValue && DateTime.UtcNow < _suppressRenderUntil)
+        if (ShouldSuppressRenderForResize(_resizePending, _suppressRenderUntil, DateTime.UtcNow))
         {
             context.FillRectangle(_theme.BackgroundBrush, new Rect(0, 0, Bounds.Width, Bounds.Height));
             return;
@@ -578,6 +583,13 @@ public class TerminalControl : Control
         _theme = theme;
         InvalidateVisual();
     }
+
+    internal static bool ShouldSuppressRenderForResize(
+        bool resizePending,
+        DateTime suppressRenderUntil,
+        DateTime now) =>
+        resizePending
+        || (suppressRenderUntil != DateTime.MinValue && now < suppressRenderUntil);
 
     private bool IsMouseTracking => _session?.IsMouseTracking() == true;
 

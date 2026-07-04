@@ -37,9 +37,9 @@ public readonly struct Color : IEquatable<Color>
         return Kind switch
         {
             ColorKind.Default => palette.Foreground,
-            ColorKind.Ansi => palette.Colors[R],
-            ColorKind.AnsiBright => palette.Colors[R + 8],
-            ColorKind.Indexed => palette.Colors[R],
+            ColorKind.Ansi => palette.GetAnsiColor(R),
+            ColorKind.AnsiBright => palette.GetAnsiColor(R, bright: true),
+            ColorKind.Indexed => palette.GetColor(R),
             ColorKind.Rgb => (R, G, B),
             _ => palette.Foreground,
         };
@@ -75,7 +75,11 @@ public readonly struct Color : IEquatable<Color>
 
 public class Palette
 {
-    public (byte R, byte G, byte B)[] Colors { get; } = new (byte, byte, byte)[256];
+    public const int ColorCount = 256;
+    public const int AnsiColorCount = 8;
+    public const int StandardColorCount = 16;
+
+    public (byte R, byte G, byte B)[] Colors { get; } = new (byte, byte, byte)[ColorCount];
     public (byte R, byte G, byte B) Foreground { get; init; }
     public (byte R, byte G, byte B) Background { get; init; }
     public (byte R, byte G, byte B) Cursor { get; init; }
@@ -102,6 +106,48 @@ public class Palette
     public (byte R, byte G, byte B) Peach { get; init; }
     public (byte R, byte G, byte B) Red { get; init; }
     public (byte R, byte G, byte B) Sapphire { get; init; }
+
+    public (byte R, byte G, byte B) GetColor(int index)
+    {
+        if ((uint)index >= ColorCount)
+            throw new ArgumentOutOfRangeException(nameof(index));
+
+        return Colors[index];
+    }
+
+    public bool TryGetColor(int index, out (byte R, byte G, byte B) color)
+    {
+        if ((uint)index < ColorCount)
+        {
+            color = Colors[index];
+            return true;
+        }
+
+        color = default;
+        return false;
+    }
+
+    public (byte R, byte G, byte B) GetAnsiColor(byte index, bool bright = false)
+    {
+        if (index >= AnsiColorCount)
+            throw new ArgumentOutOfRangeException(nameof(index));
+
+        return Colors[index + (bright ? AnsiColorCount : 0)];
+    }
+
+    public static (byte R, byte G, byte B) Mix(
+        (byte R, byte G, byte B) first,
+        (byte R, byte G, byte B) second,
+        double factor)
+    {
+        if (double.IsNaN(factor) || factor < 0 || factor > 1)
+            throw new ArgumentOutOfRangeException(nameof(factor));
+
+        return (
+            (byte)(first.R + (second.R - first.R) * factor),
+            (byte)(first.G + (second.G - first.G) * factor),
+            (byte)(first.B + (second.B - first.B) * factor));
+    }
 
     public static Palette CatppuccinMocha()
     {
@@ -407,7 +453,10 @@ public class Palette
         return palette;
     }
 
-    private static void FillExtendedColors(Palette palette)
+    /// <summary>Fills indices 16-255 with the standard xterm 6×6×6 color cube and
+    /// grayscale ramp. Public so custom palettes (built outside the factory
+    /// methods here) can share the fill instead of re-implementing it.</summary>
+    public static void FillExtendedColors(Palette palette)
     {
         // 216 color cube (indices 16-231)
         for (int r = 0; r < 6; r++)
