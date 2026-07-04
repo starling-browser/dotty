@@ -454,8 +454,9 @@ public class Palette
     }
 
     /// <summary>Fills indices 16-255 with the standard xterm 6×6×6 color cube and
-    /// grayscale ramp. Public so custom palettes (built outside the factory
-    /// methods here) can share the fill instead of re-implementing it.</summary>
+    /// grayscale ramp. Public so a palette assembled by an embedder (e.g. Akt's
+    /// terminal palette, which supplies its own 0-15 ramp) can share this fill
+    /// rather than re-implementing the xterm math.</summary>
     public static void FillExtendedColors(Palette palette)
     {
         // 216 color cube (indices 16-231)

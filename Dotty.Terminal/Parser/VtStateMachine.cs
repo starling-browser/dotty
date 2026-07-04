@@ -302,10 +302,6 @@ public class VtStateMachine
         }
         else if (b is >= 0x40 and <= 0x7E) // Final
         {
-            if (!_paramHasDigit && _paramCount > 0)
-            {
-                // trailing semicolon => implicit 0 already set
-            }
             handler.CsiDispatch(Parameters, Intermediates, (char)b);
             _state = State.Ground;
         }

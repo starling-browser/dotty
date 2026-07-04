@@ -61,6 +61,7 @@ public class Terminal
 
     public Terminal(GridSize size)
     {
+        size = size.AtLeastOne();
         _grid = new Grid(size);
         _altGrid = new Grid(size);
         _cursor = CursorState.Default;
@@ -764,6 +765,7 @@ public class Terminal
 
     public void Resize(GridSize size)
     {
+        size = size.AtLeastOne();
         var oldSize = _grid.Size;
         if (size == oldSize) return;
 

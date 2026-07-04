@@ -6,8 +6,9 @@ namespace Dotty.Terminal;
 /// Character cell widths (the classic wcwidth contract, for the BMP): 0 for
 /// combining and zero-width characters, 2 for East Asian Wide/Fullwidth (and
 /// the wide BMP emoji), 1 for everything else. Cells hold a single
-/// <see cref="char"/>, so astral-plane codepoints (surrogate pairs) are out of
-/// scope here — each surrogate half flows through as width 1.
+/// <see cref="char"/>, so astral-plane codepoints are out of scope: the parser
+/// truncates them to one BMP char upstream, and this width is measured on the
+/// result.
 /// </summary>
 public static class Wcwidth
 {
@@ -22,7 +23,7 @@ public static class Wcwidth
     /// own. The soft hyphen (U+00AD) is the classic wcwidth exception: width 1.</summary>
     public static bool IsZeroWidth(char c)
     {
-        if (c == '­')
+        if (c == '\u00AD') // soft hyphen (the classic wcwidth width-1 exception)
             return false;
 
         return CharUnicodeInfo.GetUnicodeCategory(c) is
