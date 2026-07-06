@@ -61,6 +61,7 @@ public class Terminal
 
     public Terminal(GridSize size)
     {
+        size = size.AtLeastOne();
         _grid = new Grid(size);
         _altGrid = new Grid(size);
         _cursor = CursorState.Default;
@@ -184,6 +185,16 @@ public class Terminal
     {
         if (_selection is not { } sel) return null;
         var (start, end) = sel.Normalized();
+
+        // Line mode highlights whole rows (anchor == endpoint on a triple
+        // click), so the copied text must span whole rows too.
+        var lineMode = sel.Mode == SelectionMode.Line;
+        if (lineMode)
+        {
+            start = new GridPosition(0, start.Row);
+            end = new GridPosition((ushort)(_grid.Size.Cols - 1), end.Row);
+        }
+
         var sb = new System.Text.StringBuilder();
 
         for (ushort row = start.Row; row <= end.Row; row++)
@@ -195,7 +206,12 @@ public class Terminal
 
             var line = new System.Text.StringBuilder();
             for (ushort col = rowStart; col <= rowEnd; col++)
-                line.Append(cells[col].Codepoint);
+            {
+                // Wide glyphs occupy two cells; the spacer half is presentation
+                // only and must not become a space in the copied text.
+                if (!cells[col].Attrs.HasFlag(CellAttributes.WideSpacer))
+                    line.Append(cells[col].Codepoint);
+            }
 
             if (row != end.Row)
             {
@@ -204,7 +220,9 @@ public class Terminal
             }
             else
             {
-                sb.Append(line);
+                // Line mode always ends at the grid edge — trim the padding
+                // cells that were never part of the printed line.
+                sb.Append(lineMode ? line.ToString().TrimEnd() : line.ToString());
             }
         }
 
@@ -336,6 +354,28 @@ public class Terminal
         var size = _grid.Size;
         ushort cols = size.Cols;
 
+        var width = Wcwidth.Width(c);
+        // Zero-width characters (combining marks, format chars) occupy no cell.
+        // Cells hold a single char, so they can't compose onto the previous
+        // glyph — dropping them keeps the grid clean instead of smearing them
+        // into their own garbage cells.
+        if (width == 0)
+            return;
+
+        var wide = width == 2;
+        // A wide glyph needs two cells; a one-column grid can never host one.
+        if (wide && cols < 2)
+            return;
+
+        // A wide glyph that doesn't fit before the right edge wraps early
+        // (autowrap) or is dropped, like xterm.
+        if (wide && !_wrapPending && _cursor.Position.Col + 2 > cols)
+        {
+            if (!_modes.HasFlag(TerminalModes.AutoWrap))
+                return;
+            _wrapPending = true;
+        }
+
         // Handle pending wrap
         if (_wrapPending)
         {
@@ -364,7 +404,11 @@ public class Terminal
 
         // Insert mode
         if (_modes.HasFlag(TerminalModes.InsertMode))
-            _grid.InsertCells(_cursor.Position.Col, _cursor.Position.Row, 1);
+            _grid.InsertCells(_cursor.Position.Col, _cursor.Position.Row, (ushort)(wide ? 2 : 1));
+
+        // Overwriting half of an existing wide glyph must not leave the other
+        // half orphaned on screen.
+        ClearWideGlyphHalves(_cursor.Position.Col, _cursor.Position.Row, wide);
 
         // Write the character
         _lastPrintedChar = c;
@@ -372,19 +416,76 @@ public class Terminal
         cell.Codepoint = c;
         cell.Fg = _penFg;
         cell.Bg = _penBg;
-        cell.Attrs = _penAttrs;
+        cell.Attrs = wide ? _penAttrs | CellAttributes.Wide : _penAttrs;
+
+        if (wide)
+        {
+            // The presentation-only second half: same pen, no codepoint of its own.
+            ref var spacer = ref _grid.CellAt((ushort)(_cursor.Position.Col + 1), _cursor.Position.Row);
+            spacer.Codepoint = ' ';
+            spacer.Fg = _penFg;
+            spacer.Bg = _penBg;
+            spacer.Attrs = _penAttrs | CellAttributes.WideSpacer;
+        }
 
         _damage.MarkRow(_cursor.Position.Row);
 
         // Advance cursor
-        if (_cursor.Position.Col + 1 >= cols)
+        if (_cursor.Position.Col + width >= cols)
         {
+            // Reached the right edge. Park the cursor on the last column the
+            // glyph occupied — for a wide glyph at Cols-2 that is Cols-1, not the
+            // head cell — so cursor reports and REP clamping match what was
+            // rendered (a narrow glyph at Cols-1 is already there). The deferred
+            // wrap then fires on the next print.
+            _cursor.Position = _cursor.Position with { Col = (ushort)(cols - 1) };
             if (_modes.HasFlag(TerminalModes.AutoWrap))
                 _wrapPending = true;
         }
         else
         {
-            _cursor.Position = _cursor.Position with { Col = (ushort)(_cursor.Position.Col + 1) };
+            _cursor.Position = _cursor.Position with { Col = (ushort)(_cursor.Position.Col + width) };
+        }
+    }
+
+    /// <summary>
+    /// Clears the counterpart cells of any wide glyph the write at
+    /// (<paramref name="col"/>, <paramref name="row"/>) is about to clip:
+    /// the head when overwriting a spacer, the spacer when overwriting a head,
+    /// and — for a wide write — whatever the second cell clips too.
+    /// </summary>
+    private void ClearWideGlyphHalves(ushort col, ushort row, bool wide)
+    {
+        ClearClippedGlyph(col, row);
+        if (wide)
+            ClearClippedGlyph((ushort)(col + 1), row);
+    }
+
+    private void ClearClippedGlyph(ushort col, ushort row)
+    {
+        ref var target = ref _grid.CellAt(col, row);
+        if (target.Attrs.HasFlag(CellAttributes.WideSpacer) && col > 0)
+        {
+            ref var head = ref _grid.CellAt((ushort)(col - 1), row);
+            if (head.Attrs.HasFlag(CellAttributes.Wide))
+            {
+                head.Codepoint = ' ';
+                head.Attrs &= ~CellAttributes.Wide;
+            }
+
+            target.Attrs &= ~CellAttributes.WideSpacer;
+        }
+
+        if (target.Attrs.HasFlag(CellAttributes.Wide) && col + 1 < _grid.Size.Cols)
+        {
+            ref var spacer = ref _grid.CellAt((ushort)(col + 1), row);
+            if (spacer.Attrs.HasFlag(CellAttributes.WideSpacer))
+            {
+                spacer.Codepoint = ' ';
+                spacer.Attrs &= ~CellAttributes.WideSpacer;
+            }
+
+            target.Attrs &= ~CellAttributes.Wide;
         }
     }
 
@@ -670,6 +771,7 @@ public class Terminal
 
     public void Resize(GridSize size)
     {
+        size = size.AtLeastOne();
         var oldSize = _grid.Size;
         if (size == oldSize) return;
 

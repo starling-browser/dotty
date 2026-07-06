@@ -49,6 +49,8 @@ public class ScrollbackBuffer
     {
         if (index < 0 || index >= _count) return null;
         // Most recent is at (_head - 1), second most recent at (_head - 2), etc.
+        // index can reach _count-1 (≤ _maxLines-1), so _head-1-index bottoms out
+        // near -_maxLines; bias by 2*_maxLines to keep the operand non-negative.
         int actual = (_head - 1 - index + _maxLines * 2) % _maxLines;
         return _buffer[actual];
     }

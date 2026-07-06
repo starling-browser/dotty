@@ -1,3 +1,5 @@
+using GridSize = Dotty.Terminal.GridSize;
+
 namespace Dotty.Rendering;
 
 public readonly struct CellMetrics
@@ -25,4 +27,11 @@ public readonly struct CellMetrics
 
     public ushort ColumnsForWidth(double width) => (ushort)Math.Max(1, (width - PadX * 2) / CellWidth);
     public ushort RowsForHeight(double height) => (ushort)Math.Max(1, (height - PadY * 2) / CellHeight);
+
+    public double RenderedContentWidth(ushort columns) => PadX + columns * CellWidth;
+    public double RenderedContentHeight(ushort rows) => PadY + rows * CellHeight;
+
+    public bool FitsWithin(GridSize size, double width, double height) =>
+        RenderedContentWidth(size.Cols) <= width
+        && RenderedContentHeight(size.Rows) <= height;
 }

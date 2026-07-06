@@ -14,9 +14,15 @@ public static class TerminalText
             var cells = terminal.ViewportRowCells(row);
             var line = new StringBuilder();
             for (int col = 0; col < cells.Length; col++)
-                line.Append(cells[col].Codepoint);
+            {
+                // The spacer half of a wide glyph carries no codepoint of its
+                // own — skip it so wide characters don't gain a trailing space
+                // (matching Terminal.SelectionText).
+                if (!cells[col].Attrs.HasFlag(CellAttributes.WideSpacer))
+                    line.Append(cells[col].Codepoint);
+            }
 
-            sb.AppendLine(line.ToString().TrimEnd());
+            sb.Append(line.ToString().TrimEnd()).Append('\n');
         }
 
         var result = sb.ToString().TrimEnd('\r', '\n');

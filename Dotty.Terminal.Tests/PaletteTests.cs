@@ -63,8 +63,66 @@ public class PaletteTests
         foreach (var factory in factories)
         {
             var palette = factory();
-            Assert.Equal(256, palette.Colors.Length);
+            Assert.Equal(Palette.ColorCount, palette.Colors.Length);
         }
+    }
+
+    [Fact]
+    public void GetColor_ReturnsIndexedColor()
+    {
+        var palette = Palette.CatppuccinMocha();
+
+        Assert.Equal(palette.Colors[21], palette.GetColor(21));
+    }
+
+    [Fact]
+    public void GetColor_RejectsOutOfRangeIndex()
+    {
+        var palette = Palette.CatppuccinMocha();
+
+        Assert.Throws<ArgumentOutOfRangeException>(() => palette.GetColor(Palette.ColorCount));
+    }
+
+    [Fact]
+    public void TryGetColor_ReturnsFalseForOutOfRangeIndex()
+    {
+        var palette = Palette.CatppuccinMocha();
+
+        Assert.False(palette.TryGetColor(Palette.ColorCount, out _));
+    }
+
+    [Fact]
+    public void GetAnsiColor_ReturnsNormalAndBrightColors()
+    {
+        var palette = Palette.CatppuccinMocha();
+
+        Assert.Equal(palette.Colors[2], palette.GetAnsiColor(2));
+        Assert.Equal(palette.Colors[10], palette.GetAnsiColor(2, bright: true));
+    }
+
+    [Fact]
+    public void GetAnsiColor_RejectsOutOfRangeIndex()
+    {
+        var palette = Palette.CatppuccinMocha();
+
+        Assert.Throws<ArgumentOutOfRangeException>(() => palette.GetAnsiColor(Palette.AnsiColorCount));
+    }
+
+    [Fact]
+    public void Mix_InterpolatesRgbComponents()
+    {
+        var mixed = Palette.Mix((10, 20, 30), (20, 40, 80), 0.5);
+
+        Assert.Equal((15, 30, 55), mixed);
+    }
+
+    [Theory]
+    [InlineData(-0.1)]
+    [InlineData(1.1)]
+    public void Mix_RejectsOutOfRangeFactor(double factor)
+    {
+        Assert.Throws<ArgumentOutOfRangeException>(() =>
+            Palette.Mix((0, 0, 0), (255, 255, 255), factor));
     }
 
     [Fact]

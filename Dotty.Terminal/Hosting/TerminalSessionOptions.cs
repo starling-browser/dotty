@@ -16,6 +16,17 @@ public sealed class TerminalSessionOptions
     /// </summary>
     public PromptHint PromptHint { get; init; } = PromptHint.None;
 
+    /// <summary>
+    /// Whether OSC 52 clipboard-write sequences from the terminal are honored
+    /// (raising <see cref="TerminalSession.ClipboardWriteRequested"/>). Off by
+    /// default: any program whose output reaches the emulator — including
+    /// piped-through command output, a remote host over SSH, or an HTTP
+    /// response body printed into the pane — can otherwise silently overwrite
+    /// the user's clipboard (e.g. with a command that auto-runs on paste).
+    /// Enable only when the embedder trusts the terminal's output stream.
+    /// </summary>
+    public bool AllowClipboardWrite { get; init; }
+
     internal PtyConfig ToPtyConfig()
     {
         var config = new PtyConfig

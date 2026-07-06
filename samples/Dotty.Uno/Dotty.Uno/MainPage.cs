@@ -38,7 +38,15 @@ public sealed partial class MainPage : Page
             IsTabStop = true,
             TextWrapping = TextWrapping.NoWrap,
         };
-        _terminalView.KeyDown += OnTerminalKeyDown;
+        // handledEventsToo: the TextBox consumes navigation keys (Up/Down/Home/
+        // End/…) for its own caret movement and marks them handled, so a plain
+        // KeyDown handler never sees them and the shell never receives the arrow-
+        // key escape sequence (e.g. no Up-arrow command-history recall). Opt in to
+        // still receive them and forward them to the PTY.
+        _terminalView.AddHandler(
+            UIElement.KeyDownEvent,
+            new KeyEventHandler(OnTerminalKeyDown),
+            handledEventsToo: true);
         _terminalView.TextChanged += OnTerminalTextChanged;
         _terminalView.Loaded += (_, _) => FocusTerminal();
 
@@ -81,18 +89,22 @@ public sealed partial class MainPage : Page
 
     private void RefreshScreen()
     {
-        var screenText = _session.GetVisibleText().TrimEnd('\r', '\n');
+        // TextBox coerces all line breaks in Text to '\r' (WinUI behavior), so
+        // store _displayText in the same form or comparisons against
+        // _terminalView.Text fail once the screen has multiple lines.
+        var screenText = _session.GetVisibleText().TrimEnd('\r', '\n')
+            .Replace("\r\n", "\r").Replace('\n', '\r');
         _pendingInput = TrimEchoedInput(screenText, _pendingInput);
         SetTerminalText(screenText, _pendingInput);
     }
 
     private void OnTerminalKeyDown(object sender, KeyRoutedEventArgs e)
     {
-        var key = MapKey(e.Key);
+        var key = TerminalKeyMapping.MapWindowsVirtualKey((int)e.Key);
         if (key == TerminalKey.None) return;
 
         var modifiers = MapModifiers();
-        if (IsPrintableKey(key)
+        if (TerminalKeyMapping.IsPrintable(key)
             && !modifiers.HasFlag(TerminalKeyModifiers.Control)
             && !modifiers.HasFlag(TerminalKeyModifiers.Alt)
             && !modifiers.HasFlag(TerminalKeyModifiers.Meta))
@@ -129,60 +141,6 @@ public sealed partial class MainPage : Page
         MoveCaretToEnd();
     }
 
-    private static TerminalKey MapKey(VirtualKey key)
-    {
-        return key switch
-        {
-            >= VirtualKey.A and <= VirtualKey.Z => (TerminalKey)((int)TerminalKey.A + (int)(key - VirtualKey.A)),
-            >= VirtualKey.Number0 and <= VirtualKey.Number9 => (TerminalKey)((int)TerminalKey.D0 + (int)(key - VirtualKey.Number0)),
-            >= VirtualKey.NumberPad0 and <= VirtualKey.NumberPad9 => (TerminalKey)((int)TerminalKey.NumPad0 + (int)(key - VirtualKey.NumberPad0)),
-            VirtualKey.Enter => TerminalKey.Enter,
-            VirtualKey.Back => TerminalKey.Backspace,
-            VirtualKey.Tab => TerminalKey.Tab,
-            VirtualKey.Escape => TerminalKey.Escape,
-            VirtualKey.Up => TerminalKey.Up,
-            VirtualKey.Down => TerminalKey.Down,
-            VirtualKey.Right => TerminalKey.Right,
-            VirtualKey.Left => TerminalKey.Left,
-            VirtualKey.Home => TerminalKey.Home,
-            VirtualKey.End => TerminalKey.End,
-            VirtualKey.PageUp => TerminalKey.PageUp,
-            VirtualKey.PageDown => TerminalKey.PageDown,
-            VirtualKey.Insert => TerminalKey.Insert,
-            VirtualKey.Delete => TerminalKey.Delete,
-            VirtualKey.F1 => TerminalKey.F1,
-            VirtualKey.F2 => TerminalKey.F2,
-            VirtualKey.F3 => TerminalKey.F3,
-            VirtualKey.F4 => TerminalKey.F4,
-            VirtualKey.F5 => TerminalKey.F5,
-            VirtualKey.F6 => TerminalKey.F6,
-            VirtualKey.F7 => TerminalKey.F7,
-            VirtualKey.F8 => TerminalKey.F8,
-            VirtualKey.F9 => TerminalKey.F9,
-            VirtualKey.F10 => TerminalKey.F10,
-            VirtualKey.F11 => TerminalKey.F11,
-            VirtualKey.F12 => TerminalKey.F12,
-            VirtualKey.Space => TerminalKey.Space,
-            VirtualKey.Multiply => TerminalKey.Multiply,
-            VirtualKey.Add => TerminalKey.Add,
-            VirtualKey.Subtract => TerminalKey.Subtract,
-            VirtualKey.Decimal => TerminalKey.Decimal,
-            VirtualKey.Divide => TerminalKey.Divide,
-            (VirtualKey)186 => TerminalKey.OemSemicolon,
-            (VirtualKey)187 => TerminalKey.OemPlus,
-            (VirtualKey)188 => TerminalKey.OemComma,
-            (VirtualKey)189 => TerminalKey.OemMinus,
-            (VirtualKey)190 => TerminalKey.OemPeriod,
-            (VirtualKey)191 => TerminalKey.OemQuestion,
-            (VirtualKey)192 => TerminalKey.OemTilde,
-            (VirtualKey)219 => TerminalKey.OemOpenBrackets,
-            (VirtualKey)220 => TerminalKey.OemPipe,
-            (VirtualKey)221 => TerminalKey.OemCloseBrackets,
-            (VirtualKey)222 => TerminalKey.OemQuotes,
-            _ => TerminalKey.None,
-        };
-    }
-
     private static TerminalKeyModifiers MapModifiers()
     {
         var modifiers = TerminalKeyModifiers.None;
@@ -200,28 +158,6 @@ public sealed partial class MainPage : Page
         var state = InputKeyboardSource.GetKeyStateForCurrentThread(key);
         return (state & CoreVirtualKeyStates.Down) == CoreVirtualKeyStates.Down;
     }
-
-    private static bool IsPrintableKey(TerminalKey key) =>
-        (key >= TerminalKey.A && key <= TerminalKey.Z)
-        || (key >= TerminalKey.D0 && key <= TerminalKey.D9)
-        || (key >= TerminalKey.NumPad0 && key <= TerminalKey.NumPad9)
-        || key is TerminalKey.Space
-            or TerminalKey.OemMinus
-            or TerminalKey.OemPlus
-            or TerminalKey.OemOpenBrackets
-            or TerminalKey.OemCloseBrackets
-            or TerminalKey.OemPipe
-            or TerminalKey.OemSemicolon
-            or TerminalKey.OemQuotes
-            or TerminalKey.OemComma
-            or TerminalKey.OemPeriod
-            or TerminalKey.OemQuestion
-            or TerminalKey.OemTilde
-            or TerminalKey.Multiply
-            or TerminalKey.Add
-            or TerminalKey.Subtract
-            or TerminalKey.Decimal
-            or TerminalKey.Divide;
 
     private void FocusTerminal()
     {

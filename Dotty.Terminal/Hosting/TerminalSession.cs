@@ -16,9 +16,10 @@ public sealed class TerminalSession : IDisposable
     private string _lastTitle;
     private string? _lastWorkingDirectory;
     private string? _promptShimDirectory;
+    private readonly bool _allowClipboardWrite;
 
     public TerminalSession(TerminalSessionOptions options)
-        : this(CreateDriver(options, out string? promptShimDirectory))
+        : this(CreateDriver(options, out string? promptShimDirectory), options.AllowClipboardWrite)
     {
         _promptShimDirectory = promptShimDirectory;
     }
@@ -38,9 +39,10 @@ public sealed class TerminalSession : IDisposable
         }
     }
 
-    private TerminalSession(TerminalDriver driver)
+    private TerminalSession(TerminalDriver driver, bool allowClipboardWrite = false)
     {
         _driver = driver;
+        _allowClipboardWrite = allowClipboardWrite;
         _lastTitle = driver.Terminal.Title;
         _lastWorkingDirectory = driver.Terminal.WorkingDirectory;
     }
@@ -56,7 +58,7 @@ public sealed class TerminalSession : IDisposable
     public bool IsRunning => _running;
 
     public static TerminalSession CreateWithoutPty(GridSize size) =>
-        new(TerminalDriver.CreateWithoutPty(size));
+        new(TerminalDriver.CreateWithoutPty(size), allowClipboardWrite: false);
 
     public void Start()
     {
@@ -248,7 +250,9 @@ public sealed class TerminalSession : IDisposable
         if (response.Length > 0)
             Write(response);
 
-        if (clipboard != null)
+        // OSC 52 writes are honored only when the embedder opted in; the payload
+        // is drained above regardless so it never leaks into a later frame.
+        if (clipboard != null && _allowClipboardWrite)
             ClipboardWriteRequested?.Invoke(this, new TerminalClipboardEventArgs(clipboard));
 
         if (bell)

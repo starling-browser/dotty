@@ -155,7 +155,11 @@ public class VtHandler : IVtHandler
 
             case 'b': // REP — Repeat preceding graphic character
             {
-                ushort n = Math.Max(first, (ushort)1);
+                // Clamp to the columns left on the row: a repeat can only fill the
+                // current line, and this caps the ~7000x expansion a hostile
+                // "ESC [ 65535 b" would otherwise drive on the reader thread.
+                int remaining = _terminal.GridSize.Cols - _terminal.CursorPos.Col;
+                int n = Math.Min(Math.Max(first, (ushort)1), Math.Max(remaining, 1));
                 char c = _terminal.LastPrintedChar;
                 for (int j = 0; j < n; j++)
                     _terminal.PutChar(c);

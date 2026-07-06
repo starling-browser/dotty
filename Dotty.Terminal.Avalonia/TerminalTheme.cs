@@ -7,14 +7,14 @@ public class TerminalTheme
 {
     public Palette Palette { get; }
 
-    private readonly ISolidColorBrush[] _brushCache = new ISolidColorBrush[256];
+    private readonly ISolidColorBrush[] _brushCache = new ISolidColorBrush[Palette.ColorCount];
 
     public TerminalTheme(Palette palette)
     {
         Palette = palette;
-        for (int i = 0; i < 256; i++)
+        for (int i = 0; i < Palette.ColorCount; i++)
         {
-            var (r, g, b) = palette.Colors[i];
+            var (r, g, b) = palette.GetColor(i);
             _brushCache[i] = new SolidColorBrush(Avalonia.Media.Color.FromRgb(r, g, b));
         }
     }
@@ -32,7 +32,7 @@ public class TerminalTheme
         => new SolidColorBrush(ToAvaloniaColor(Palette.Cursor));
 
     public ISolidColorBrush GetBrush(int index)
-        => index >= 0 && index < 256 ? _brushCache[index] : ForegroundBrush;
+        => (uint)index < Palette.ColorCount ? _brushCache[index] : ForegroundBrush;
 
     /// <summary>Returns an Avalonia Color from a palette RGB tuple with specified alpha byte.</summary>
     public static Color WithAlpha((byte R, byte G, byte B) c, byte alpha)
@@ -41,9 +41,7 @@ public class TerminalTheme
     /// <summary>Linearly interpolates between two palette colors.</summary>
     public static Color Mix((byte R, byte G, byte B) a, (byte R, byte G, byte B) b, double factor)
     {
-        byte r = (byte)(a.R + (b.R - a.R) * factor);
-        byte g = (byte)(a.G + (b.G - a.G) * factor);
-        byte bl = (byte)(a.B + (b.B - a.B) * factor);
-        return Color.FromRgb(r, g, bl);
+        var mixed = Palette.Mix(a, b, factor);
+        return Color.FromRgb(mixed.R, mixed.G, mixed.B);
     }
 }

@@ -5,6 +5,11 @@ public record struct GridSize(ushort Cols, ushort Rows)
     public static GridSize Default => new(80, 24);
 
     public int TotalCells => Cols * Rows;
+
+    /// <summary>A grid with at least one row and column. A zero dimension would
+    /// underflow the <c>Cols - 1</c> / <c>Rows - 1</c> arithmetic that indexes the
+    /// grid (0 → 65535 as ushort), so callers clamp untrusted sizes through here.</summary>
+    public GridSize AtLeastOne() => new(Math.Max(Cols, (ushort)1), Math.Max(Rows, (ushort)1));
 }
 
 public record struct GridPosition(ushort Col, ushort Row)

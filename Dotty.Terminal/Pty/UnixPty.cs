@@ -29,6 +29,23 @@ public sealed partial class UnixPty : IPty
     [DllImport("libc", SetLastError = true)]
     private static extern int ioctl(int fd, nuint request, ref WinSize winp);
 
+    // ioctl is variadic, and Apple's arm64 ABI passes variadic arguments on the
+    // stack rather than in registers. A normal P/Invoke puts the struct pointer
+    // in x2, so ioctl's va_arg reads stack garbage instead — the winsize the
+    // kernel stores ends up random (observed: a shell believing COLUMNS≈28000).
+    // Padding out the eight register slots forces the pointer onto the stack
+    // exactly where va_arg expects it.
+    [DllImport("libc", EntryPoint = "ioctl", SetLastError = true)]
+    private static extern int ioctl_variadic_stack(int fd, nuint request,
+        nint pad2, nint pad3, nint pad4, nint pad5, nint pad6, nint pad7,
+        ref WinSize winp);
+
+    private static int IoctlWinSize(int fd, nuint request, ref WinSize winp) =>
+        RuntimeInformation.IsOSPlatform(OSPlatform.OSX)
+            && RuntimeInformation.ProcessArchitecture == Architecture.Arm64
+            ? ioctl_variadic_stack(fd, request, 0, 0, 0, 0, 0, 0, ref winp)
+            : ioctl(fd, request, ref winp);
+
     [DllImport("libc", SetLastError = true)]
     private static extern int execvp([MarshalAs(UnmanagedType.LPUTF8Str)] string file, IntPtr[] argv);
 
@@ -200,7 +217,7 @@ public sealed partial class UnixPty : IPty
     public void Resize(GridSize size)
     {
         var ws = new WinSize { ws_row = size.Rows, ws_col = size.Cols };
-        ioctl(_masterFd, TIOCSWINSZ, ref ws);
+        IoctlWinSize(_masterFd, TIOCSWINSZ, ref ws);
     }
 
     public int? TryWaitExit()
