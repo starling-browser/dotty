@@ -433,6 +433,12 @@ public class Terminal
         // Advance cursor
         if (_cursor.Position.Col + width >= cols)
         {
+            // Reached the right edge. Park the cursor on the last column the
+            // glyph occupied — for a wide glyph at Cols-2 that is Cols-1, not the
+            // head cell — so cursor reports and REP clamping match what was
+            // rendered (a narrow glyph at Cols-1 is already there). The deferred
+            // wrap then fires on the next print.
+            _cursor.Position = _cursor.Position with { Col = (ushort)(cols - 1) };
             if (_modes.HasFlag(TerminalModes.AutoWrap))
                 _wrapPending = true;
         }

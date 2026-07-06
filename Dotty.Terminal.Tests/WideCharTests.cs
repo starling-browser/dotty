@@ -46,6 +46,25 @@ public class WideCharTests
     }
 
     [Fact]
+    public void WideChar_FittingExactlyInLastColumns_StaysOnTheRowWithCursorAtRightEdge()
+    {
+        // Cursor at Cols-2 (col 4 of a 6-wide grid): the glyph fits without
+        // wrapping. It occupies cols 4-5, and the cursor parks on the last
+        // column it filled (Cols-1), matching a narrow glyph's deferred wrap.
+        var term = NewTerminal("abcd漢", cols: 6, rows: 2);
+        var row = term.RowCells(0);
+        Assert.Equal('漢', row[4].Codepoint);
+        Assert.True(row[4].Attrs.HasFlag(CellAttributes.Wide));
+        Assert.True(row[5].Attrs.HasFlag(CellAttributes.WideSpacer));
+        Assert.Equal(new GridPosition(5, 0), term.CursorPos);
+        Assert.Equal(' ', term.RowCells(1)[0].Codepoint); // nothing wrapped down yet
+
+        // The pending wrap fires on the next print.
+        term.ProcessPtyOutput("x"u8);
+        Assert.Equal('x', term.RowCells(1)[0].Codepoint);
+    }
+
+    [Fact]
     public void OverwritingTheHead_ClearsTheSpacer()
     {
         var term = NewTerminal("漢\r"); // print, then return to column 0
