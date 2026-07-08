@@ -95,5 +95,5 @@ internal static class ZshPromptShim
         }
         catch (IOException) { }
         catch (UnauthorizedAccessException) { }
-        catch (DirectoryNotFoundException) { }
+    }
 }
