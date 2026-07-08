@@ -23,6 +23,15 @@ public class Terminal
     private Color _penBg;
     private CellAttributes _penAttrs;
 
+    // OSC 8 hyperlinks. Cells store a small id; these map it to the URI. The pen
+    // holds the id of the currently-open link (0 = none). Links are deduplicated
+    // by their explicit `id=` param, or by URI when none is given, so a link that
+    // wraps across rows — or repeats — reuses one id and the table stays bounded.
+    private ushort _penHyperlinkId;
+    private ushort _nextHyperlinkId = 1; // 0 is reserved for "no link"
+    private readonly Dictionary<ushort, string> _hyperlinks = new();
+    private readonly Dictionary<string, ushort> _hyperlinkKeys = new();
+
     // Selection state
     private SelectionRange? _selection;
 
@@ -417,6 +426,7 @@ public class Terminal
         cell.Fg = _penFg;
         cell.Bg = _penBg;
         cell.Attrs = wide ? _penAttrs | CellAttributes.Wide : _penAttrs;
+        cell.HyperlinkId = _penHyperlinkId;
 
         if (wide)
         {
@@ -426,6 +436,7 @@ public class Terminal
             spacer.Fg = _penFg;
             spacer.Bg = _penBg;
             spacer.Attrs = _penAttrs | CellAttributes.WideSpacer;
+            spacer.HyperlinkId = _penHyperlinkId;
         }
 
         _damage.MarkRow(_cursor.Position.Row);
@@ -684,6 +695,10 @@ public class Terminal
         _penFg = Color.DefaultColor;
         _penBg = Color.DefaultColor;
         _penAttrs = CellAttributes.None;
+        _penHyperlinkId = 0;
+        _nextHyperlinkId = 1;
+        _hyperlinks.Clear();
+        _hyperlinkKeys.Clear();
         _selection = null;
         _title = "";
         _workingDirectory = null;
@@ -719,6 +734,43 @@ public class Terminal
     internal void SetTitle(string title) => _title = title;
 
     internal void SetWorkingDirectory(string dir) => _workingDirectory = dir;
+
+    /// <summary>
+    /// Opens or closes an OSC 8 hyperlink. An empty <paramref name="uri"/> closes
+    /// the current link; a non-empty one becomes the pen link for subsequent
+    /// output. <paramref name="id"/> is the sequence's explicit <c>id=</c> param
+    /// (or null); it groups spans — e.g. the two rows of a wrapped link — under
+    /// one link id. The URI is stored verbatim; callers that act on it (open a
+    /// browser) are responsible for restricting schemes.
+    /// </summary>
+    internal void SetHyperlink(string? id, string uri)
+    {
+        if (string.IsNullOrEmpty(uri))
+        {
+            _penHyperlinkId = 0;
+            return;
+        }
+
+        // Group by explicit id when present so a wrapped/multi-span link is one
+        // entry; otherwise group by URI so repeats of the same link don't grow
+        // the table without bound.
+        var key = string.IsNullOrEmpty(id) ? "u " + uri : "i " + id;
+        if (!_hyperlinkKeys.TryGetValue(key, out var linkId))
+        {
+            linkId = _nextHyperlinkId;
+            // ushort ids top out at 65535 — vanishingly unlikely in a session, but
+            // stop allocating rather than wrap to 0 ("no link") or collide.
+            if (_nextHyperlinkId != ushort.MaxValue)
+                _nextHyperlinkId++;
+            _hyperlinkKeys[key] = linkId;
+            _hyperlinks[linkId] = uri;
+        }
+
+        _penHyperlinkId = linkId;
+    }
+
+    /// <summary>OSC 8 hyperlink table: cell <see cref="Cell.HyperlinkId"/> → URI.</summary>
+    public IReadOnlyDictionary<ushort, string> Hyperlinks => _hyperlinks;
 
     internal void PushResponse(ReadOnlySpan<byte> data) => _responseBuffer.AddRange(data);
 
