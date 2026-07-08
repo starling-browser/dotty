@@ -397,10 +397,46 @@ public class VtHandler : IVtHandler
             case 7: // Current Working Directory
                 _terminal.SetWorkingDirectory(Encoding.UTF8.GetString(data));
                 break;
+            case 8: // Hyperlink: OSC 8 ; params ; URI ST
+                HandleOsc8(data);
+                break;
             case 52: // Clipboard access
                 HandleOsc52(data);
                 break;
         }
+    }
+
+    /// <summary>
+    /// Handles an OSC 8 hyperlink. The payload after the command number is
+    /// <c>params ; URI</c>; an empty URI closes the current link. <c>params</c> is
+    /// a colon-separated key=value list whose only standard key is <c>id</c>,
+    /// which groups spans (e.g. a link wrapped across rows) under one link.
+    /// </summary>
+    private void HandleOsc8(ReadOnlySpan<byte> data)
+    {
+        int sep = data.IndexOf((byte)';');
+        if (sep < 0)
+            return; // Malformed: no params/URI separator.
+
+        var id = ExtractHyperlinkId(data[..sep]);
+        var uri = Encoding.UTF8.GetString(data[(sep + 1)..]);
+        _terminal.SetHyperlink(id, uri);
+    }
+
+    /// <summary>Pulls the <c>id=</c> value out of an OSC 8 params section
+    /// (<c>key=value:key=value</c>), or null when absent.</summary>
+    private static string? ExtractHyperlinkId(ReadOnlySpan<byte> paramsPart)
+    {
+        if (paramsPart.Length == 0)
+            return null;
+
+        foreach (var kv in Encoding.UTF8.GetString(paramsPart).Split(':'))
+        {
+            if (kv.StartsWith("id=", StringComparison.Ordinal))
+                return kv["id=".Length..];
+        }
+
+        return null;
     }
 
     private void ParseSgr(ReadOnlySpan<ushort> parameters)

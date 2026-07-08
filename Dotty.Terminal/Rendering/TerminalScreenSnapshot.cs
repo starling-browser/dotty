@@ -5,9 +5,17 @@ public sealed record TerminalScreenSnapshot(
     IReadOnlyList<TerminalRenderCell> Cells,
     TerminalRenderCursor Cursor,
     bool IsScrolledBack,
-    string? ExitMessage)
+    string? ExitMessage,
+    IReadOnlyDictionary<ushort, string> Hyperlinks)
 {
     public TerminalRenderCell CellAt(ushort col, ushort row) => Cells[row * Size.Cols + col];
+
+    /// <summary>The OSC 8 URI a cell links to, or null when it has no link.</summary>
+    public string? HyperlinkAt(ushort col, ushort row)
+    {
+        var id = CellAt(col, row).HyperlinkId;
+        return id != 0 && Hyperlinks.TryGetValue(id, out var uri) ? uri : null;
+    }
 
     public static TerminalScreenSnapshot FromTerminal(Terminal terminal)
     {
@@ -28,7 +36,8 @@ public sealed record TerminalScreenSnapshot(
                     cell.Fg,
                     cell.Bg,
                     cell.Attrs,
-                    selection?.Contains(pos) ?? false);
+                    selection?.Contains(pos) ?? false,
+                    cell.HyperlinkId);
             }
         }
 
@@ -45,8 +54,21 @@ public sealed record TerminalScreenSnapshot(
             cells,
             new TerminalRenderCursor(cursor.Position, cursor.Shape, cursor.Visible, cursor.Blinking),
             terminal.IsScrolledBack,
-            exitMessage);
+            exitMessage,
+            SnapshotHyperlinks(terminal.Hyperlinks));
     }
+
+    // Copy the live link table so the snapshot stays a stable value even as the
+    // terminal keeps mutating. Empty tables share one instance (no per-frame
+    // allocation for the common no-links case).
+    private static IReadOnlyDictionary<ushort, string> SnapshotHyperlinks(
+        IReadOnlyDictionary<ushort, string> live) =>
+        live.Count == 0
+            ? EmptyHyperlinks
+            : new Dictionary<ushort, string>(live);
+
+    private static readonly IReadOnlyDictionary<ushort, string> EmptyHyperlinks =
+        new Dictionary<ushort, string>();
 }
 
 public readonly record struct TerminalRenderCell(
@@ -55,7 +77,8 @@ public readonly record struct TerminalRenderCell(
     Color Foreground,
     Color Background,
     CellAttributes Attributes,
-    bool IsSelected);
+    bool IsSelected,
+    ushort HyperlinkId);
 
 public readonly record struct TerminalRenderCursor(
     GridPosition Position,

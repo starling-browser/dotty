@@ -35,8 +35,9 @@ public class VtStateMachine
     private readonly byte[] _intermediates = new byte[4];
     private int _intermediateCount;
 
-    // OSC payload
-    private readonly byte[] _oscPayload = new byte[512];
+    // OSC payload. Sized for OSC 8 hyperlink URIs (the realistic long-OSC case);
+    // bytes past the cap are dropped rather than growing the buffer.
+    private readonly byte[] _oscPayload = new byte[4096];
     private int _oscPayloadLen;
 
     // UTF-8 decoding
@@ -78,6 +79,13 @@ public class VtStateMachine
                 _state = State.Ground;
                 return;
             case 0x1B: // ESC
+                // ESC inside an OSC string is the start of a String Terminator
+                // (ST = ESC \): finalize the OSC now, then let the trailing '\'
+                // be consumed in the Escape state. Without this, ST-terminated
+                // OSC (titles, cwd, OSC 8 hyperlinks) would never dispatch — only
+                // the BEL terminator would.
+                if (_state == State.OscString)
+                    handler.OscDispatch(OscPayload);
                 TransitionTo(State.Escape);
                 return;
         }
@@ -352,12 +360,9 @@ public class VtStateMachine
                 handler.OscDispatch(OscPayload);
                 _state = State.Ground;
                 break;
-            case 0x1B:
-                // ESC could be start of ST (ESC \)
-                // We'll handle this by checking next byte — for simplicity, dispatch now
-                handler.OscDispatch(OscPayload);
-                TransitionTo(State.Escape);
-                break;
+            // NB: ESC (start of a 7-bit ST) is intercepted by the "anywhere"
+            // transition in ProcessByte, which dispatches the OSC before this
+            // state ever sees it.
             default:
                 if (_oscPayloadLen < _oscPayload.Length)
                     _oscPayload[_oscPayloadLen++] = b;
